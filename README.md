@@ -1,115 +1,95 @@
-# ⛓ 受理報案輔助系統
+# ⛓ 受理報案輔助系統 v1.0
 
-**Case Filing Assistance System — MVP v1.0**
+專為台灣警方派出所第一線受理報案設計的數位鑑識輔助工具。
 
-專為台灣警方派出所第一線受理報案設計的數位鑑識輔助工具。透過 AI 影像辨識自動擷取截圖中的加密貨幣錢包地址、交易雜湊、銀行帳號、網址等關鍵情資，降低人工抄錄錯誤，保留完整證據鏈與稽核軌跡。
+## 功能
 
-## 功能特色
+- **本地 OCR 辨識** — Tesseract.js 瀏覽器端引擎，支援繁體中文+英文，**敏感截圖不外流**
+- **規則引擎擷取** — 自動偵測錢包地址、TxHash、銀行帳號、網址、金額、時間、電話等
+- **密碼學驗證** — EIP-55 Checksum (ETH)、Base58Check (BTC/TRON)、Bech32 (SegWit)
+- **鏈上查詢** — Etherscan / TronScan / Blockchain.info API 查詢真實餘額與交易紀錄
+- **交易帳本下載** — 一鍵下載錢包資料與交易紀錄 CSV
+- **人工校對** — 逐欄確認/修改/駁回，含信心分數與驗證狀態
+- **資料持久化** — IndexedDB 本地儲存，重新整理不消失
+- **全程稽核** — 所有操作寫入 Audit Log
 
-- **📤 證據上傳** — 拖拉/點擊上傳手機截圖、網銀畫面、PDF 等證據檔案
-- **🔍 AI 辨識擷取** — Claude Vision API 自動辨識並擷取關鍵欄位（錢包地址、TxHash、金額、時間、帳號、網址）
-- **✅ 格式驗證** — 加密貨幣地址 Checksum 驗證（BTC/ETH/TRON/LTC）、URL 風險評估、日期合理性檢查
-- **👮 人工校對** — 逐欄確認/修改/駁回，含信心分數與驗證狀態
-- **📄 一鍵匯出** — 受理摘要複製到剪貼簿、情資清單 CSV 下載
-- **📝 稽核日誌** — 全流程操作紀錄，可追溯可稽核
+## 部署（Vercel）
 
-## 系統架構
-
-```
-前端（派出所瀏覽器）
-  ↓ HTTPS
-API Server（案件/證據/匯出）
-  ↓ Queue
-AI Worker（OCR + 抽取 + 驗證）
-  ↓
-PostgreSQL + MinIO（資料 + 物件儲存）
-```
-
-完整架構圖與資料流圖見 `docs/` 目錄。
-
-## 快速開始
-
-### 本地開發
+### 1. 推送到 GitHub
 
 ```bash
-# 安裝依賴
-npm install
-
-# 啟動開發伺服器
-npm run dev
-
-# 建置生產版本
-npm run build
+git init
+git remote add origin https://github.com/cibnata/case_filing_assist.git
+git add .
+git commit -m "feat: 受理報案輔助系統 v1.0"
+git branch -M main
+git push -u origin main --force
 ```
 
-### 部署到 Vercel
+### 2. 設定 Vercel
 
-1. Fork 或 clone 此 repository
-2. 在 [Vercel](https://vercel.com) 匯入專案
-3. Framework Preset 選擇 **Vite**
-4. 點擊 Deploy
+1. 登入 [vercel.com](https://vercel.com) → Import `cibnata/case_filing_assist`
+2. Framework: **Vite**（自動偵測）
+3. **環境變數**（Settings → Environment Variables）：
+
+| 變數名稱 | 必要性 | 說明 |
+|----------|--------|------|
+| `ETHERSCAN_API_KEY` | 建議 | Etherscan 免費 API Key（ETH 查詢用）|
+| `TRONSCAN_API_KEY` | 選填 | TronScan API Key（TRON 查詢用）|
+
+> **OCR 辨識不需要任何 API Key**，完全在瀏覽器本地執行。
+
+4. 點 **Deploy**
+
+### 3. 取得 API Key
+
+- **Etherscan**: [etherscan.io/apis](https://etherscan.io/apis) → 免費註冊
+- **TronScan**: [tronscan.org](https://tronscan.org/)
+
+## 本地開發
+
+```bash
+npm install
+
+# 使用 Vercel CLI（含 serverless functions）
+npx vercel dev
+
+# 或純前端開發
+npm run dev
+```
 
 ## 專案結構
 
 ```
-case_filing_assist/
-├── index.html              # 入口 HTML
-├── package.json            # 依賴管理
-├── vite.config.js          # Vite 設定
-├── vercel.json             # Vercel 部署設定
-├── public/
-│   └── favicon.svg
+├── api/                    # Vercel Serverless Functions
+│   ├── wallet.js          #   區塊鏈錢包查詢
+│   └── transactions.js    #   區塊鏈交易紀錄查詢
 ├── src/
-│   ├── main.jsx            # React 入口
-│   └── App.jsx             # 主應用程式（受理報案輔助系統）
-└── docs/                   # 開發規格文件
-    ├── system-architecture.mermaid  # 系統架構圖
-    ├── data-flow.mermaid            # 資料流圖
-    ├── db-schema.sql                # PostgreSQL Schema
-    ├── api-spec.md                  # API 規格書
-    └── extraction-rules.md          # AI 抽取規則表
+│   ├── App.jsx            # 主應用程式
+│   ├── main.jsx           # React 入口
+│   └── lib/
+│       ├── ocr.js         #   Tesseract.js OCR + 規則引擎擷取
+│       ├── db.js          #   IndexedDB 持久化層（Dexie）
+│       ├── validate.js    #   密碼學地址驗證
+│       └── api.js         #   區塊鏈 API 呼叫
+├── docs/                   # 開發規格文件
+└── vercel.json             # Vercel 部署設定
 ```
 
-## 技術規格文件
+## 技術棧
 
-| 文件 | 說明 |
+| 層級 | 技術 |
 |------|------|
-| `docs/system-architecture.mermaid` | 五層系統架構（前端→API→佇列→AI→資料層） |
-| `docs/data-flow.mermaid` | 六階段資料流（上傳→OCR→抽取→確認→匯出→移送） |
-| `docs/db-schema.sql` | PostgreSQL 10 張核心表（含 RBAC、審計、版本化） |
-| `docs/api-spec.md` | 9 組 RESTful API 端點規格 |
-| `docs/extraction-rules.md` | BTC/ETH/TRON 驗證規則 + OCR 錯誤修正 + URL 風險評分 |
+| 前端 | React 18 + Vite |
+| OCR 引擎 | **Tesseract.js 5**（瀏覽器端 WASM，繁中+英文） |
+| 情資擷取 | 規則引擎（Regex Pattern + 脈絡分析） |
+| 資料持久化 | IndexedDB (Dexie.js) |
+| 區塊鏈 API | Etherscan / TronScan / Blockchain.info |
+| 密碼學驗證 | js-sha3 (Keccak-256) + Web Crypto API (SHA-256) |
+| 部署 | Vercel (Serverless Functions) |
 
-## 支援的鏈別與驗證
+## 安全特性
 
-| 鏈別 | 地址格式 | 驗證方式 |
-|------|----------|----------|
-| Bitcoin (BTC) | 1xxx / 3xxx / bc1xxx | Base58Check / Bech32 |
-| Ethereum (ETH) | 0x + 40 hex | EIP-55 Checksum |
-| TRON (TRX) | T + 33 chars | Base58Check |
-| Litecoin (LTC) | L/M/ltc1 開頭 | Base58Check / Bech32 |
-
-## 開發路線圖
-
-### MVP（目前版本）
-- [x] 案件建立與管理
-- [x] 證據上傳（圖片）
-- [x] AI 辨識擷取（Claude Vision）
-- [x] 加密貨幣地址格式驗證
-- [x] 人工校對確認流程
-- [x] 匯出（剪貼簿 + CSV）
-- [x] 稽核日誌
-
-### 正式版（規劃中）
-- [ ] 對話紀錄解析（LINE/FB/IG）
-- [ ] PDF 證據辨識
-- [ ] 原圖定位框回看（Bounding Box Highlight）
-- [ ] 相似案件/錢包比對
-- [ ] 主管覆核流程
-- [ ] 標準化移送 Package
-- [ ] 完整後端 API 實作
-- [ ] 內網部署方案（Docker Compose）
-
-## 授權
-
-本專案為台灣執法單位內部使用工具。
+- **OCR 完全本地執行** — 截圖影像不會傳送到任何外部伺服器
+- **IndexedDB 本地儲存** — 案件資料存在員警自己的瀏覽器中
+- **鏈上查詢走 Serverless** — API Key 安全存放在 Vercel 環境變數
