@@ -451,7 +451,7 @@ function EvidenceTab({ caseData, refresh, userName }) {
                    "正在用規則引擎擷取情資欄位..."}
                 </div>
               </div>
-            )）}
+            )}
             </div>
             {selEv.preview && (
               <div style={{ marginBottom: 16, borderRadius: 8, overflow: "hidden", border: `1px solid ${C.border}`, background: "#000", textAlign: "center" }}>
