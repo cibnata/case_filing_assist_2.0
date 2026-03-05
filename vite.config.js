@@ -5,12 +5,15 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    // Proxy API calls to Vercel dev server in local development
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
     },
+  },
+  // pdfjs-dist uses node APIs that need polyfilling
+  optimizeDeps: {
+    include: ['pdfjs-dist'],
   },
 })

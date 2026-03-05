@@ -1,8 +1,107 @@
 // src/lib/ocr.js — 本地 OCR 辨識引擎
 // Tesseract.js（瀏覽器端 WASM），敏感資料不外流
+// + PDF 轉圖（pdf.js）
 // + 規則引擎自動擷取情資欄位
 
 import Tesseract from 'tesseract.js';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// pdf.js worker 使用 CDN（避免 Vite 打包問題）
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.mjs';
+
+// ══════════════════════════════════════
+// PDF 轉圖片
+// ══════════════════════════════════════
+
+/**
+ * 將 PDF base64 的每一頁轉為 PNG base64 圖片陣列
+ * @param {string} pdfDataUrl - data:application/pdf;base64,... 格式
+ * @param {function} onProgress - 進度回調
+ * @returns {Promise<string[]>} 每頁的 PNG dataURL
+ */
+export async function pdfToImages(pdfDataUrl, onProgress) {
+  const raw = atob(pdfDataUrl.split(',')[1]);
+  const bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+
+  const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+  const totalPages = pdf.numPages;
+  const images = [];
+
+  for (let i = 1; i <= totalPages; i++) {
+    if (onProgress) onProgress({ status: `轉換 PDF 第 ${i}/${totalPages} 頁...`, progress: Math.round((i / totalPages) * 30) });
+    const page = await pdf.getPage(i);
+    // 使用 2x scale 以提升 OCR 品質
+    const scale = 2.0;
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d');
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    images.push(canvas.toDataURL('image/png'));
+  }
+
+  return images;
+}
+
+/**
+ * 判斷 dataURL 是否為 PDF
+ */
+export function isPDF(dataUrl) {
+  return dataUrl && dataUrl.startsWith('data:application/pdf');
+}
+
+/**
+ * 對 PDF 執行完整 OCR — 每頁轉圖後逐頁辨識再合併
+ */
+export async function recognizePDF(pdfDataUrl, onProgress) {
+  // 1. PDF → images
+  const images = await pdfToImages(pdfDataUrl, onProgress);
+  if (images.length === 0) throw new Error('PDF 頁數為零');
+
+  // 2. 逐頁 OCR
+  let allText = '';
+  let allFields = [];
+  let totalConfidence = 0;
+
+  for (let i = 0; i < images.length; i++) {
+    if (onProgress) onProgress({
+      status: `辨識第 ${i + 1}/${images.length} 頁...`,
+      progress: 30 + Math.round(((i + 1) / images.length) * 60),
+    });
+
+    const result = await recognizeAndExtract(images[i], null); // 不傳 progress 避免覆蓋
+    allText += `\n===== 第 ${i + 1} 頁 =====\n${result.ocr_text}\n`;
+    allFields = allFields.concat(result.fields);
+    totalConfidence += result.raw_confidence;
+  }
+
+  // 3. 合併去重
+  const seen = new Set();
+  const uniqueFields = allFields.filter(f => {
+    const key = `${f.type}:${f.value}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  // 4. 生成合併摘要
+  const summary = generateSummary(allText, uniqueFields);
+
+  if (onProgress) onProgress({ status: '完成', progress: 100 });
+
+  return {
+    fields: uniqueFields,
+    ocr_text: allText.trim(),
+    summary,
+    raw_confidence: totalConfidence / images.length,
+    word_count: allText.length,
+    page_count: images.length,
+    page_images: images, // 回傳各頁圖片供預覽
+  };
+}
 
 // ══════════════════════════════════════
 // OCR 引擎狀態管理（Singleton Worker）

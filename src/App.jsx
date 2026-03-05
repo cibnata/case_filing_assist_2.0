@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import db, { createCase, getAllCases, loadFullCase, addEvidence, updateEvidence, addFields, updateField, confirmField as dbConfirmField, rejectField as dbRejectField, addAuditLog, updateCase, deleteCase } from "./lib/db.js";
 import { detectChain, validateField, validateBase58CheckAsync } from "./lib/validate.js";
 import { lookupWallet, lookupTransactions } from "./lib/api.js";
-import { recognizeAndExtract, initOCR, terminateOCR } from "./lib/ocr.js";
+import { recognizeAndExtract, recognizePDF, isPDF, pdfToImages, initOCR, terminateOCR } from "./lib/ocr.js";
 
 /* ── Fonts & Constants ── */
 const MONO = `"Source Code Pro","JetBrains Mono","SF Mono",Consolas,monospace`;
@@ -297,8 +297,19 @@ function EvidenceTab({ caseData, refresh, userName }) {
     try {
       await addAuditLog(caseData.id, "ocr_start", `開始辨識 ${ev.evidence_number} (Tesseract.js 本地引擎)`, userName);
 
-      // 使用本地 Tesseract.js OCR + 規則引擎擷取
-      const result = await recognizeAndExtract(ev.preview, setOcrProgress);
+      let result;
+
+      if (isPDF(ev.preview)) {
+        // PDF: 先用 pdf.js 轉圖再逐頁 OCR
+        result = await recognizePDF(ev.preview, setOcrProgress);
+        // 儲存第一頁圖片作為預覽用
+        if (result.page_images && result.page_images.length > 0) {
+          await updateEvidence(ev.id, { page_preview: result.page_images[0] });
+        }
+      } else {
+        // 圖片: 直接 OCR
+        result = await recognizeAndExtract(ev.preview, setOcrProgress);
+      }
 
       // 用驗證模組對每個欄位做真實的 checksum 驗證
       const newFields = (result.fields || []).map(f => {
@@ -309,7 +320,7 @@ function EvidenceTab({ caseData, refresh, userName }) {
           evidence_number: ev.evidence_number,
           type: f.type, value: f.value, confidence: f.confidence || 0.5,
           context: f.context || "", attributes: { ...f.attributes, chain },
-          validation: v, confirmed: false, method: "tesseract_regex",
+          validation: v, confirmed: false, method: isPDF(ev.preview) ? "pdf_tesseract" : "tesseract_regex",
         };
       });
 
@@ -319,10 +330,11 @@ function EvidenceTab({ caseData, refresh, userName }) {
         ocr_text: result.ocr_text,
         summary: result.summary,
         ocr_confidence: result.raw_confidence,
+        page_count: result.page_count || 1,
       });
       await updateCase(caseData.id, { status: "pending_review" });
       await addAuditLog(caseData.id, "ocr_complete",
-        `${ev.evidence_number} 辨識完成 (信心 ${Math.round(result.raw_confidence)}%)，擷取 ${newFields.length} 個欄位`, userName);
+        `${ev.evidence_number} 辨識完成 (${result.page_count ? result.page_count + '頁, ' : ''}信心 ${Math.round(result.raw_confidence)}%)，擷取 ${newFields.length} 個欄位`, userName);
       await refresh();
     } catch (err) {
       setError(`辨識失敗: ${err.message}`);
@@ -361,8 +373,8 @@ function EvidenceTab({ caseData, refresh, userName }) {
               border: `1px solid ${selected === ev.id ? C.accent : C.border}`,
               borderRadius: 8, padding: "10px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
             }}>
-              {ev.preview ? <img src={ev.preview} alt="" style={{ width: 40, height: 40, borderRadius: 4, objectFit: "cover" }} /> :
-                <div style={{ width: 40, height: 40, borderRadius: 4, background: C.bg3, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>📄</div>}
+              {ev.preview && !isPDF(ev.preview) ? <img src={ev.preview} alt="" style={{ width: 40, height: 40, borderRadius: 4, objectFit: "cover" }} /> :
+                <div style={{ width: 40, height: 40, borderRadius: 4, background: isPDF(ev.preview) ? "#1E3A5F" : C.bg3, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>{isPDF(ev.preview) ? "📄" : "📎"}</div>}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: C.textBright }}>{ev.evidence_number}</div>
                 <div style={{ fontSize: 11, color: C.textDim, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ev.filename}</div>
@@ -410,7 +422,19 @@ function EvidenceTab({ caseData, refresh, userName }) {
             </div>
             {selEv.preview && (
               <div style={{ marginBottom: 16, borderRadius: 8, overflow: "hidden", border: `1px solid ${C.border}`, background: "#000", textAlign: "center" }}>
-                <img src={selEv.preview} alt="" style={{ maxWidth: "100%", maxHeight: 350, objectFit: "contain" }} />
+                {isPDF(selEv.preview) ? (
+                  selEv.page_preview ? (
+                    <img src={selEv.page_preview} alt="PDF 第一頁" style={{ maxWidth: "100%", maxHeight: 350, objectFit: "contain" }} />
+                  ) : (
+                    <div style={{ padding: 40, color: C.textDim }}>
+                      <div style={{ fontSize: 48, marginBottom: 8 }}>📄</div>
+                      <div style={{ fontSize: 13 }}>PDF 文件 — 點擊辨識按鈕後自動轉換為圖片並 OCR</div>
+                      <div style={{ fontSize: 11, marginTop: 4, color: C.textDim }}>{selEv.filename} ({selEv.page_count ? `${selEv.page_count} 頁` : '頁數待偵測'})</div>
+                    </div>
+                  )
+                ) : (
+                  <img src={selEv.preview} alt="" style={{ maxWidth: "100%", maxHeight: 350, objectFit: "contain" }} />
+                )}
               </div>
             )}
             {selEv.summary && (
