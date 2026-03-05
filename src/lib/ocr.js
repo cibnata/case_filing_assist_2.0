@@ -6,9 +6,10 @@
 import Tesseract from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// pdf.js worker 使用 CDN（避免 Vite 打包問題）
+// pdf.js worker 跟著 pdfjs-dist 版本
+const PDFJS_VER = pdfjsLib.version; // 會是 "4.10.38" 這種字串
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.mjs';
+  `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VER}/build/pdf.worker.min.mjs`;
 
 // ══════════════════════════════════════
 // PDF 轉圖片
