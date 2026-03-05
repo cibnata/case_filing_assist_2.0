@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import db, { createCase, getAllCases, loadFullCase, addEvidence, updateEvidence, addFields, updateField, confirmField as dbConfirmField, rejectField as dbRejectField, addAuditLog, updateCase, deleteCase } from "./lib/db.js";
+import db, { createCase, getAllCases, loadFullCase, addEvidence, getEvidence, updateEvidence, addFields, updateField, confirmField as dbConfirmField, rejectField as dbRejectField, addAuditLog, updateCase, deleteCase } from "./lib/db.js";
 import { detectChain, validateField, validateBase58CheckAsync } from "./lib/validate.js";
 import { lookupWallet, lookupTransactions } from "./lib/api.js";
 import { recognizeAndExtract, recognizePDF, isPDF, pdfToImages, initOCR, terminateOCR } from "./lib/ocr.js";
@@ -274,24 +274,57 @@ function EvidenceTab({ caseData, refresh, userName }) {
   const [error, setError] = useState(null);
   const fileRef = useRef(null);
 
+  // IDs of evidence waiting for OCR
+  const [ocrQueue, setOcrQueue] = useState([]);
+
   const handleFiles = useCallback(async (files) => {
+    const newIds = [];
     for (let i = 0; i < files.length; i++) {
       const f = files[i];
       if (!f.type.startsWith("image/") && f.type !== "application/pdf") continue;
       const base64 = await fileToBase64(f);
+      const id = uid();
       await addEvidence({
-        id: uid(), case_id: caseData.id,
+        id, case_id: caseData.id,
         evidence_number: `E-${String((caseData.evidence?.length || 0) + i + 1).padStart(3, "0")}`,
         filename: f.name, file_type: f.type.startsWith("image/") ? "screenshot" : "pdf_document",
         mime_type: f.type, file_size: f.size,
-        preview: base64, // Store base64 in IndexedDB
+        preview: base64,
         status: "uploaded",
       });
+      newIds.push(id);
     }
     await refresh();
+    // Queue all new uploads for auto-OCR
+    setOcrQueue(prev => [...prev, ...newIds]);
   }, [caseData, refresh]);
 
-  const runOCR = async (ev) => {
+  // Auto-process OCR queue: when queue has items and not currently processing
+  useEffect(() => {
+    if (processing || ocrQueue.length === 0) return;
+    const nextId = ocrQueue[0];
+    (async () => {
+      const ev = await getEvidence(nextId);
+      if (ev && ev.preview && (ev.status === 'uploaded' || ev.status === 'failed')) {
+        setSelected(nextId);
+        await runOCRInternal(ev);
+      }
+      // Remove processed item from queue, trigger next
+      setOcrQueue(prev => prev.slice(1));
+    })();
+  }, [ocrQueue, processing]);
+
+  // Click evidence: auto-OCR if not yet processed
+  const handleSelectEvidence = useCallback(async (evId) => {
+    setSelected(evId);
+    if (processing) return;
+    const ev = caseData.evidence?.find(e => e.id === evId);
+    if (ev && (ev.status === 'uploaded' || ev.status === 'failed')) {
+      await runOCRInternal(ev);
+    }
+  }, [caseData, processing]);
+
+  const runOCRInternal = async (ev) => {
     if (!ev.preview) return;
     setProcessing(ev.id); setError(null); setOcrProgress({ status: '準備中...', progress: 0 });
     try {
@@ -368,7 +401,7 @@ function EvidenceTab({ caseData, refresh, userName }) {
         <div style={{ fontSize: 12, fontWeight: 700, color: C.textLight, letterSpacing: 1 }}>證據清單 ({caseData.evidence?.length || 0})</div>
         <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
           {(caseData.evidence || []).map(ev => (
-            <div key={ev.id} onClick={() => setSelected(ev.id)} style={{
+            <div key={ev.id} onClick={() => handleSelectEvidence(ev.id)} style={{
               background: selected === ev.id ? `${C.accent}12` : C.bg1,
               border: `1px solid ${selected === ev.id ? C.accent : C.border}`,
               borderRadius: 8, padding: "10px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
@@ -394,12 +427,12 @@ function EvidenceTab({ caseData, refresh, userName }) {
               <EvStatusBadge status={selEv.status} />
               <div style={{ flex: 1 }} />
               {selEv.preview && selEv.status === "uploaded" && (
-                <button onClick={() => runOCR(selEv)} disabled={!!processing} style={{ background: C.accent, border: "none", borderRadius: 6, padding: "8px 18px", color: "#fff", fontWeight: 600, fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                <button onClick={() => runOCRInternal(selEv)} disabled={!!processing} style={{ background: C.accent, border: "none", borderRadius: 6, padding: "8px 18px", color: "#fff", fontWeight: 600, fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
                   {processing === selEv.id ? <><Spinner /> {ocrProgress?.status || '辨識中...'} {ocrProgress?.progress ? `${ocrProgress.progress}%` : ''}</> : "🔍 OCR 辨識擷取"}
                 </button>
               )}
               {selEv.status === "failed" && (
-                <button onClick={() => runOCR(selEv)} disabled={!!processing} style={{ background: C.warning, border: "none", borderRadius: 6, padding: "8px 18px", color: "#fff", fontWeight: 600, fontSize: 12 }}>🔄 重新辨識</button>
+                <button onClick={() => runOCRInternal(selEv)} disabled={!!processing} style={{ background: C.warning, border: "none", borderRadius: 6, padding: "8px 18px", color: "#fff", fontWeight: 600, fontSize: 12 }}>🔄 重新辨識</button>
               )}
             </div>
             {/* OCR Progress Bar */}
