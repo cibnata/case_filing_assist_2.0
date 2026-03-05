@@ -446,13 +446,20 @@ function EvidenceTab({ caseData, refresh, userName }) {
                   <div style={{ width: `${ocrProgress.progress}%`, height: "100%", background: `linear-gradient(90deg, ${C.accent}, ${C.accentDark})`, borderRadius: 3, transition: "width 0.3s ease" }} />
                 </div>
                 <div style={{ fontSize: 10, color: C.textDim, marginTop: 4 }}>
-                  {ocrProgress.progress < 30 ? "首次使用需下載繁體中文語言包（約 10MB），之後會快取" :
-                   ocrProgress.progress < 80 ? "Tesseract.js 本地辨識中，資料不會離開您的瀏覽器" :
-                   "正在用規則引擎擷取情資欄位..."}
+                  {ocrProgress.progress < 30
+                    ? "首次使用需下載繁體中文語言包（約 10MB），之後會快取"
+                    : ocrProgress.progress < 80
+                      ? "Tesseract.js 本地辨識中，資料不會離開您的瀏覽器"
+                      : "正在用規則引擎擷取情資欄位..."}
                 </div>
               </div>
             )}
-            </div>
+
+            {selEv.preview && (
+              <div style={{ marginBottom: 16, borderRadius: 8, overflow: "hidden", border: `1px solid ${C.border}`, background: "#000", textAlign: "center" }}>
+                ...
+              </div>
+            )}
             {selEv.preview && (
               <div style={{ marginBottom: 16, borderRadius: 8, overflow: "hidden", border: `1px solid ${C.border}`, background: "#000", textAlign: "center" }}>
                 {isPDF(selEv.preview) ? (
