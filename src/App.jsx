@@ -452,7 +452,6 @@ function EvidenceTab({ caseData, refresh, userName }) {
                 </div>
               </div>
             )}
-            </div>
             {selEv.preview && (
               <div style={{ marginBottom: 16, borderRadius: 8, overflow: "hidden", border: `1px solid ${C.border}`, background: "#000", textAlign: "center" }}>
                 {isPDF(selEv.preview) ? (
