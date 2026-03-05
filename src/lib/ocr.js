@@ -135,7 +135,7 @@ export async function initOCR(onProgress) {
 
       // 設定 Tesseract 參數以優化截圖辨識
       await workerInstance.setParameters({
-        tessedit_pageseg_mode: '6',         // 假設為均勻文字區塊
+        tessedit_pageseg_mode: '4',         // 單欄文字
         preserve_interword_spaces: '1',     // 保留字詞間距
       });
 
