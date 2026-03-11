@@ -1,0 +1,99 @@
+---
+title: 受理報案輔助系統 — 整體架構圖
+---
+graph TB
+    subgraph CLIENT["🖥️ 前端 — 派出所操作介面（內網瀏覽器）"]
+        direction TB
+        CL1["📋 案件管理<br/>建立 / 搜尋 / 列表"]
+        CL2["📤 證據上傳<br/>拖拉 / 拍照 / 多檔批次"]
+        CL3["🔍 OCR 校對介面<br/>原圖定位框 + 逐欄確認"]
+        CL4["✅ 情資確認<br/>候選值 + 信心分數 + 驗證狀態"]
+        CL5["📄 匯出模組<br/>筆錄 / 摘要 / 情資清單 / 附件索引"]
+        CL6["👮 主管覆核<br/>異常提示 + 批次審核"]
+    end
+
+    subgraph API["⚙️ 後端 API 層（Node.js / Python FastAPI）"]
+        direction TB
+        A1["案件管理 API<br/>/api/cases"]
+        A2["證據管理 API<br/>/api/evidence"]
+        A3["OCR 任務 API<br/>/api/ocr"]
+        A4["情資抽取 API<br/>/api/extract"]
+        A5["匯出報表 API<br/>/api/export"]
+        A6["稽核日誌 API<br/>/api/audit"]
+        A7["使用者權限 API<br/>/api/auth"]
+    end
+
+    subgraph QUEUE["📨 訊息佇列（RabbitMQ / Redis Queue）"]
+        Q1["OCR 任務佇列"]
+        Q2["抽取任務佇列"]
+        Q3["驗證任務佇列"]
+    end
+
+    subgraph AI["🤖 AI Worker 引擎（可水平擴展）"]
+        direction TB
+        subgraph PREPROCESS["影像預處理"]
+            P1["去噪 / 銳化"]
+            P2["透視校正 / 旋轉"]
+            P3["裁切 / 分區"]
+        end
+        subgraph OCR["OCR 引擎"]
+            O1["PaddleOCR<br/>（中文優化）"]
+            O2["Tesseract<br/>（備援）"]
+        end
+        subgraph EXTRACT["情資抽取引擎"]
+            E1["規則引擎<br/>Regex + Pattern"]
+            E2["AI 引擎<br/>LLM 欄位分類"]
+            E3["QR Code 解碼"]
+        end
+        subgraph VALIDATE["驗證器"]
+            V1["加密貨幣地址<br/>Checksum 驗證"]
+            V2["URL 合法性<br/>釣魚特徵檢測"]
+            V3["日期時間<br/>格式解析 + 合理性"]
+            V4["銀行帳號<br/>規則檢核"]
+        end
+    end
+
+    subgraph DATA["💾 資料層"]
+        direction TB
+        DB["PostgreSQL<br/>案件 / 欄位 / 版本 / 稽核"]
+        OBJ["MinIO / NAS<br/>原始證據 / 縮圖 / OCR 中間檔"]
+        VEC["向量資料庫（選配）<br/>相似案件 / 錢包 / 網址比對"]
+    end
+
+    subgraph GOV["🔒 治理與資安層"]
+        direction TB
+        G1["RBAC 權限控管"]
+        G2["全程 Audit Log"]
+        G3["加密 at rest / in transit"]
+        G4["匯出水印 / 編號"]
+        G5["模型版本管理"]
+    end
+
+    subgraph UPSTREAM["⬆️ 上級單位介面"]
+        direction TB
+        U1["分局偵查隊"]
+        U2["刑事大隊"]
+        U3["刑事警察局"]
+    end
+
+    CLIENT -->|HTTPS / 內網| API
+    API --> QUEUE
+    QUEUE --> AI
+    AI --> API
+    API --> DATA
+    API --> GOV
+    API -->|標準化 Package| UPSTREAM
+
+    classDef clientStyle fill:#1E3A5F,stroke:#3B82F6,color:#E2E8F0
+    classDef apiStyle fill:#1E293B,stroke:#60A5FA,color:#E2E8F0
+    classDef aiStyle fill:#1A1A2E,stroke:#A78BFA,color:#E2E8F0
+    classDef dataStyle fill:#162A1E,stroke:#34D399,color:#E2E8F0
+    classDef govStyle fill:#2A1A1A,stroke:#F59E0B,color:#E2E8F0
+    classDef upStyle fill:#1A2A2E,stroke:#22D3EE,color:#E2E8F0
+
+    class CL1,CL2,CL3,CL4,CL5,CL6 clientStyle
+    class A1,A2,A3,A4,A5,A6,A7 apiStyle
+    class P1,P2,P3,O1,O2,E1,E2,E3,V1,V2,V3,V4 aiStyle
+    class DB,OBJ,VEC dataStyle
+    class G1,G2,G3,G4,G5 govStyle
+    class U1,U2,U3 upStyle
