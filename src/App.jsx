@@ -144,7 +144,7 @@ export default function CaseFilingSystem() {
         }}>⛓</div>
         <div>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.textBright, letterSpacing: 1 }}>
-            受理報案輔助系統
+            受理報案輔助AI系統
           </div>
           <div style={{ fontSize: 10, color: C.textDim, letterSpacing: 0.5 }}>
             Case Filing Assistance System — MVP v1.0
@@ -323,8 +323,6 @@ function CaseWorkspace({ caseData, setCaseData, activeTab, setActiveTab }) {
 
 
 
-/* ── Evidence Tab 完整修正版 ── */
-
 
 function EvidenceTab({ caseData, setCaseData, setActiveTab }) {
   const [dragActive, setDragActive] = useState(false);
@@ -334,6 +332,7 @@ function EvidenceTab({ caseData, setCaseData, setActiveTab }) {
 
   const C = {
     accent: "#3b82f6",
+    success: "#10b981",
     border: "#e5e7eb",
     bg1: "#ffffff",
     bg2: "#f9fafb",
@@ -387,47 +386,74 @@ function EvidenceTab({ caseData, setCaseData, setActiveTab }) {
       status: p.status === "draft" ? "processing" : p.status,
     }));
     newEvidence.forEach(e => addLog("evidence_upload", `上傳證據 ${e.number}: ${e.filename}`));
-  }, [caseData]);
+  }, [caseData.evidence, setCaseData]);
 
-  const runOCR = async (ev) => {
+  // --- Step 1: 僅執行 OCR，成功後立刻切換按鈕 ---
+  const runStep1OCR = async (ev) => {
     if (!ev.file) return;
     setProcessing(ev.id);
-    addLog("ocr_start", `開始深度辨識 ${ev.number}`);
+    addLog("ocr_start", `[Step 1] 開始 OCR 辨識: ${ev.number}`);
 
     try {
-      // --- Step 1: Surya OCR ---
       const formData = new FormData();
       formData.append("file", ev.file);
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 600000);
-	  
-      console.log("發送請求至 Surya Server (localhost:8000)...");
+      //server 192.168.10.163:8000/ocr
+	  //localhost:8000/ocr
       const ocrResponse = await fetch("http://localhost:8000/ocr", {
         method: "POST",
         body: formData,
         signal: controller.signal,
       });
+	  
+	  
       clearTimeout(timeoutId);
 
       if (!ocrResponse.ok) throw new Error(`OCR Server 異常: ${ocrResponse.status}`);
       const ocrResult = await ocrResponse.json();
 
-      // --- Step 2: 自動存成 TXT ---
-      const blob = new Blob([ocrResult.ocr_text], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `OCR_Raw_${ev.number}.txt`;
-      link.click();
-      URL.revokeObjectURL(url);
+      // 構建更新後的物件
+      const updatedEvidence = { 
+        ...ev, 
+        status: "ocr_done", 
+        ocrText: ocrResult.ocr_text 
+      };
+	  
+	  
+      // 同步更新全域狀態與本地選中狀態，觸發按鈕切換
+      setCaseData(p => ({
+        ...p,
+        evidence: p.evidence.map(x => x.id === ev.id ? updatedEvidence : x),
+      }));
+      setSelectedEvidence(updatedEvidence);
+      
+      addLog("ocr_complete", `${ev.number} OCR 文字提取完成`);
+	  
+    } catch (err) {
+      console.error(err);
+      addLog("ocr_fail", `${ev.number} OCR 失敗: ${err.message}`);
+    } finally {
+      setProcessing(null);
+    }
+  };
 
-      // --- Step 3: LLM 分析 ---
+  // --- Step 2: 執行 LLM 分析 ---
+  const runStep2LLM = async (ev) => {
+    if (!ev.ocrText) return;
+	
+	console.log("ocr_text:",ev.ocrText);
+	
+    setProcessing(ev.id);
+    addLog("llm_start", `[Step 2] 開始 LLM 分析: ${ev.number}`);
+
+    try {
       const llmPrompt = `你是台灣警方的數位鑑識與洗錢防制專家。
 以下是一段從證據截圖中經由 OCR 提取的原始文字。請分析內容並轉化為結構化 JSON。
 
 ### 原始 OCR 文字內容：
 """
-${ocrResult.ocr_text}
+${ev.ocrText}
 """
 
 ### 任務目標：
@@ -456,10 +482,11 @@ ${ocrResult.ocr_text}
 - 時間要保留原始格式
 - confidence 範圍 0~1，反映辨識把握度
 - JSON 物件必須完整且格式正確。`;
-      //const llmResponse = await fetch("http://localhost:8001/v1/chat/completions"
-	  //server 192.168.10.163:8001
-	  console.log("發送請求至 LLM Server (localhost:8001)...");
-      const llmResponse = await fetch("http://192.168.10.163:8001/v1/chat/completions", {
+
+      console.log("開始 LLM 分析");
+      //server 192.168.10.163:8000/ocr
+	  //localhost:8000/ocr	  
+      const llmResponse = await fetch("http://localhost:8001/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -468,12 +495,10 @@ ${ocrResult.ocr_text}
         }),
       });
 
-      if (!llmResponse.ok) throw new Error("LLM Server 回應失敗");
+      if (!llmResponse.ok) throw new Error("LLM Server 無回應");
       const llmData = await llmResponse.json();
-	
       const llmRaw = llmData.choices[0].message.content;
-      console.log("LLM 回應:",llmRaw);
-      // --- Step 4: 解析與更新 ---
+
       let parsed;
       try {
         const cleanJson = llmRaw.replace(/```json\s*/g, "").replace(/```/g, "").trim();
@@ -482,7 +507,7 @@ ${ocrResult.ocr_text}
         const m = llmRaw.match(/\{[\s\S]*\}/);
         parsed = m ? JSON.parse(m[0]) : { fields: [] };
       }
-      console.log("parsed:",parsed);
+      console.log(parsed);
       const newFields = (parsed.fields || []).map(f => ({
         id: Math.random().toString(36).substr(2, 9),
         evidenceId: ev.id,
@@ -491,21 +516,26 @@ ${ocrResult.ocr_text}
         value: f.value,
         confidence: f.confidence || 0.8,
         context: f.context || "",
-        method: "surya+llm",
+        method: "llm_extract",
       }));
+
+      const finalEvidence = { 
+        ...ev, 
+        status: "extracted", 
+        summary: parsed.summary 
+      };
 
       setCaseData(p => ({
         ...p,
-        evidence: p.evidence.map(x => x.id === ev.id ? {
-          ...x, status: "extracted", ocrText: ocrResult.ocr_text, summary: parsed.summary,
-        } : x),
+        evidence: p.evidence.map(x => x.id === ev.id ? finalEvidence : x),
         fields: [...(p.fields || []), ...newFields],
       }));
-      addLog("ocr_complete", `${ev.number} 辨識完成`);
+      setSelectedEvidence(finalEvidence);
 
+      addLog("llm_complete", `${ev.number} LLM 分析完成`);
     } catch (err) {
       console.error(err);
-      addLog("ocr_fail", `${ev.number} 失敗: ${err.message}`);
+      addLog("llm_fail", `${ev.number} 分析失敗: ${err.message}`);
     } finally {
       setProcessing(null);
     }
@@ -537,12 +567,16 @@ ${ocrResult.ocr_text}
               border: `1px solid ${selectedEvidence?.id === ev.id ? C.accent : C.border}`,
               borderRadius: 8, padding: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 12
             }}>
-              <div style={{ width: 40, height: 40, background: C.bg3, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 40, height: 40, background: C.bg3, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                 {ev.preview ? <img src={ev.preview} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "📄"}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 700 }}>{ev.number}</div>
-                <div style={{ fontSize: 11, color: C.textDim, overflow: "hidden", textOverflow: "ellipsis" }}>{ev.filename}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, display: "flex", justifyContent: "space-between" }}>
+                  {ev.number}
+                  {ev.status === "ocr_done" && <span style={{ color: C.success }}>●</span>}
+                  {ev.status === "extracted" && <span style={{ color: C.accent }}>●</span>}
+                </div>
+                <div style={{ fontSize: 11, color: C.textDim, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ev.filename}</div>
               </div>
             </div>
           ))}
@@ -553,46 +587,35 @@ ${ocrResult.ocr_text}
       <div style={{ flex: 1, background: C.bg1, borderRadius: 12, border: `1px solid ${C.border}`, overflow: "auto", padding: 24 }}>
         {selectedEvidence ? (
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h3 style={{ margin: 0 }}>{selectedEvidence.filename}</h3>
-              {selectedEvidence.status !== "extracted" && (
-                <button 
-                  onClick={() => runOCR(selectedEvidence)} 
-                  disabled={processing === selectedEvidence.id}
-                  style={{ background: C.accent, color: "white", border: "none", padding: "8px 16px", borderRadius: 6, cursor: "pointer" }}
-                >
-                  {processing === selectedEvidence.id ? "辨識中..." : "🔍 開始 OCR 辨識"}
-                </button>
-              )}
+              <div style={{ display: "flex", gap: 10 }}>
+                {/* 初始上傳狀態 */}
+                {selectedEvidence.status === "uploaded" && (
+                  <button onClick={() => runStep1OCR(selectedEvidence)} disabled={processing !== null} style={{ background: C.textBright, color: "white", border: "none", padding: "8px 16px", borderRadius: 6, cursor: "pointer" }}>
+                    {processing === selectedEvidence.id ? "處理中..." : "🔍 OCR辨識"}
+                  </button>
+                )}
+                {/* OCR 完畢狀態 - 自動出現此按鈕 */}
+                {selectedEvidence.status === "ocr_done" && (
+                  <button onClick={() => runStep2LLM(selectedEvidence)} disabled={processing !== null} style={{ background: C.accent, color: "white", border: "none", padding: "8px 16px", borderRadius: 6, cursor: "pointer", fontWeight: "bold" }}>
+                    {processing === selectedEvidence.id ? "分析中..." : "🧠 LLM 分析"}
+                  </button>
+                )}
+                {/* 分析完成狀態 */}
+                {selectedEvidence.status === "extracted" && (
+                  <div style={{ color: C.success, fontWeight: "bold", fontSize: 14 }}>✅ 已完成LLM分析</div>
+                )}
+              </div>
             </div>
 
-            {selectedEvidence.preview ? (
-              <img src={selectedEvidence.preview} style={{ maxWidth: "100%", borderRadius: 8, border: `1px solid ${C.border}` }} />
-            ) : (
-              <div style={{ padding: 60, background: C.bg2, textAlign: "center", borderRadius: 8 }}>
-                <div style={{ fontSize: 40 }}>📕</div>
-                <div style={{ marginTop: 10, color: C.textDim }}>PDF 檔案已就緒</div>
-              </div>
-            )}
-
+            {selectedEvidence.preview && <img src={selectedEvidence.preview} style={{ maxWidth: "100%", borderRadius: 8, border: `1px solid ${C.border}`, marginBottom: 20 }} />}
+            
             {selectedEvidence.ocrText && (
-              <div style={{ marginTop: 24, borderTop: `1px solid ${C.border}`, paddingTop: 20 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: C.textBright }}>OCR 提取文字</div>
-                  <button 
-                    onClick={() => {
-                      const blob = new Blob([selectedEvidence.ocrText], { type: "text/plain" });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = `${selectedEvidence.number}_raw.txt`;
-                      a.click();
-                      URL.revokeObjectURL(url);
-                    }}
-                    style={{ fontSize: 11, background: "none", border: `1px solid ${C.border}`, padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}
-                  >
-                    💾 下載文字檔
-                  </button>
+              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 20 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+                  OCR 結果
+                  <span style={{ fontSize: 11, color: C.textDim, fontWeight: 400 }}>狀態: {selectedEvidence.status}</span>
                 </div>
                 <pre style={{ background: C.bg2, padding: 16, borderRadius: 8, fontSize: 12, whiteSpace: "pre-wrap", fontFamily: MONO }}>
                   {selectedEvidence.ocrText}
@@ -601,7 +624,7 @@ ${ocrResult.ocr_text}
             )}
           </div>
         ) : (
-          <div style={{ textAlign: "center", color: C.textDim, marginTop: 100 }}>請選擇左側證據以進行 AI 辨識</div>
+          <div style={{ textAlign: "center", color: C.textDim, marginTop: 100 }}>請選擇左側證據</div>
         )}
       </div>
     </div>
