@@ -561,7 +561,7 @@ export default function DemoPage() {
   const { data: stats } = trpc.demo.getStats.useQuery();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={{backgroundColor: "#e8f4fd"}}>
       {/* 頂部 Banner */}
       <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2 text-center">
         <p className="text-xs text-yellow-400">
@@ -572,13 +572,13 @@ export default function DemoPage() {
       {/* 側邊欄 + 主內容 */}
       <div className="flex min-h-[calc(100vh-36px)]">
         {/* 側邊欄 */}
-        <div className="w-56 bg-card border-r border-border/50 flex flex-col shrink-0">
-          <div className="p-4 border-b border-border/50">
+        <div className="w-56 border-r border-blue-200 flex flex-col shrink-0" style={{backgroundColor: "#d0e8f8"}}>
+          <div className="p-4 border-b border-blue-300">
             <div className="flex items-center gap-3">
               <img src={LOGO_URL} alt="警察局" className="w-8 h-8 object-contain" />
               <div>
-                <p className="text-xs font-bold text-foreground leading-tight">{APP_TITLE}</p>
-                <p className="text-xs text-muted-foreground">示範模式</p>
+                <p className="text-xs font-bold leading-tight" style={{color:"#1a3a5c"}}>{APP_TITLE}</p>
+                <p className="text-xs" style={{color:"#4a7aa0"}}>示範模式</p>
               </div>
             </div>
           </div>
@@ -593,9 +593,10 @@ export default function DemoPage() {
                 onClick={() => setView(item.view)}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
                   view === item.view
-                    ? "bg-primary/20 text-primary font-medium"
-                    : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                    ? "font-semibold"
+                    : "hover:bg-blue-200"
                 }`}
+                style={view === item.view ? {backgroundColor:"#2563eb", color:"#fff"} : {color:"#1a3a5c"}}
               >
                 <item.icon className="h-4 w-4" />
                 {item.label}
@@ -615,7 +616,7 @@ export default function DemoPage() {
         </div>
 
         {/* 主內容 */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-6" style={{backgroundColor: "#eef7ff"}}>
           {view === "home" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">

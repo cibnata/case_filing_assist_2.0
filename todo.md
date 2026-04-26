@@ -105,6 +105,10 @@
 - [x] 更新 constants.ts（EDUCATION_OPTIONS 與後端 enum 一致，新增 GenderOption/EducationOption/EconomicStatusOption 型別）
 - [x] 46 個 Vitest 測試全部通過
 
+## Demo 頁面樣式與文件更新
+- [x] /demo 頁面底色改為淺藍色（側邊欄 #d0e8f8、主內容 #eef7ff）
+- [x] 更新 README.md（加入系統說明、功能列表、/demo 路由說明、登入方式、資料庫 Schema、開發紀錄）
+
 ## OCR 辨識流程改版（進行中）
 - [ ] 修正 Surya OCR 微服務啟動問題（SRE module mismatch），確保 port 18765 正常運作
 - [ ] OCR 後端確認支援 JPEG 格式（圖片轉換/傳送邏輯）
