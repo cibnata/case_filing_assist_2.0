@@ -96,3 +96,11 @@
 - [x] 前端 SettingsPage.tsx 移除警號輸入欄位
 - [x] 後端 cases.updateProfile 的 input schema 移除 badgeNumber
 - [x] 46 個 Vitest 測試全部通過
+
+## 報案人完整欄位更新（已完成）
+- [x] 資料庫 reporters 表加入：gender, birthPlace, occupation, registeredAddress, education, economicStatus
+- [x] 後端 submitReporter API schema 加入所有新欄位（gender/birthDate/birthPlace/occupation/idNumber/registeredAddress/address/education/phone/economicStatus/caseType）
+- [x] 前端 ReportPage 更新完整表單（11 個欄位 + 經濟狀況選擇 + 證物上傳）
+- [x] 修正 TypeScript 型別錯誤（gender/education/economicStatus 使用嚴格 enum 型別）
+- [x] 更新 constants.ts（EDUCATION_OPTIONS 與後端 enum 一致，新增 GenderOption/EducationOption/EconomicStatusOption 型別）
+- [x] 46 個 Vitest 測試全部通過

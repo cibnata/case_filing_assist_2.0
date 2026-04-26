@@ -164,12 +164,20 @@ export const casesRouter = router({
   submitReporter: publicProcedure
     .input(z.object({
       token: z.string(),
-      name: z.string().min(1),
+      // 基本資料
+      name: z.string().min(1, "姓名為必填"),
+      gender: z.enum(["男", "女", "其他"]).optional(),
+      birthDate: z.string().min(1, "出生年月日為必填"),
+      birthPlace: z.string().optional(),
+      occupation: z.string().optional(),
       idNumber: z.string().min(10).max(10),
-      birthDate: z.string(),
-      address: z.string().min(1),
-      caseType: z.string().min(1),
+      registeredAddress: z.string().optional(),
+      address: z.string().min(1, "現住地址為必填"),
+      education: z.enum(["國小", "國中", "高中職", "大學", "碩士", "博士", "其他"]).optional(),
       phone: z.string().optional(),
+      economicStatus: z.enum(["貧寒", "勉持", "小康", "中產", "富裕"]).optional(),
+      // 報案資訊
+      caseType: z.string().min(1, "報案類別為必填"),
     }))
     .mutation(async ({ input }) => {
       const c = await getCaseByQrToken(input.token);
@@ -180,11 +188,17 @@ export const casesRouter = router({
       const reporter = await createReporter({
         caseId: c.id,
         name: input.name,
-        idNumber: input.idNumber,
+        gender: input.gender,
         birthDate: input.birthDate,
+        birthPlace: input.birthPlace,
+        occupation: input.occupation,
+        idNumber: input.idNumber,
+        registeredAddress: input.registeredAddress,
         address: input.address,
-        caseType: input.caseType,
+        education: input.education,
         phone: input.phone,
+        economicStatus: input.economicStatus,
+        caseType: input.caseType,
       });
       return { success: true, reporterId: reporter?.id };
     }),
