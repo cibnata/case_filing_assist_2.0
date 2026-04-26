@@ -1,0 +1,86 @@
+---
+title: 受理報案輔助系統 — 證據處理資料流
+---
+sequenceDiagram
+    participant O as 👮 值班員警
+    participant FE as 🖥️ 前端介面
+    participant API as ⚙️ API Server
+    participant Q as 📨 任務佇列
+    participant AI as 🤖 AI Worker
+    participant DB as 💾 PostgreSQL
+    participant FS as 📂 物件儲存
+
+    Note over O,FS: 階段一：證據上傳
+
+    O->>FE: 上傳截圖/PDF/照片
+    FE->>API: POST /api/evidence/upload
+    API->>FS: 儲存原始檔案 + 計算 SHA-256
+    API->>DB: INSERT evidence (status=uploaded)
+    API->>DB: INSERT audit_log (evidence_upload)
+    API-->>FE: 上傳成功 + 縮圖
+
+    Note over O,FS: 階段二：OCR 辨識
+
+    FE->>API: POST /api/ocr/submit {evidence_id}
+    API->>Q: 派發 OCR 任務
+    API->>DB: UPDATE evidence (status=ocr_processing)
+    Q->>AI: 取得任務
+    AI->>FS: 讀取原始影像
+    AI->>AI: 影像預處理 (去噪/校正/裁切)
+    AI->>AI: OCR 引擎辨識 (PaddleOCR)
+    AI->>AI: QR Code 解碼 (若有)
+    AI->>API: 回傳 OCR 結果 (全文+座標+信心)
+    API->>DB: INSERT ocr_results + ocr_text_blocks
+    API->>DB: UPDATE evidence (status=ocr_completed)
+    API->>DB: INSERT audit_log (ocr_complete)
+    API-->>FE: OCR 完成通知
+
+    Note over O,FS: 階段三：情資抽取與驗證
+
+    API->>Q: 派發抽取任務
+    Q->>AI: 取得任務
+    AI->>AI: 規則引擎 (Regex Pattern Matching)
+    AI->>AI: AI 引擎 (LLM 欄位分類與補全)
+    AI->>AI: 驗證器 (Checksum/URL/DateTime)
+    AI->>API: 回傳 extracted_fields + candidates
+    API->>DB: INSERT extracted_fields (Top-N candidates)
+    API->>DB: INSERT field_candidates
+    API->>DB: UPDATE evidence (status=extracted)
+    API->>DB: UPDATE case (status=pending_review)
+    API-->>FE: 抽取完成 + 欄位清單
+
+    Note over O,FS: 階段四：人工校對確認
+
+    FE-->>O: 顯示欄位卡片 (候選值+信心+驗證狀態)
+    O->>FE: 點擊「回看原圖」
+    FE->>API: GET /api/evidence/{id}/highlight?field_id=xxx
+    API->>FS: 讀取原圖 + 疊加定位框
+    API-->>FE: 標註後的影像
+    O->>FE: 確認/修改/駁回各欄位
+    FE->>API: POST /api/fields/{id}/confirm
+    API->>DB: INSERT field_confirmations (含版本號)
+    API->>DB: INSERT audit_log (field_confirm)
+    API-->>FE: 更新確認狀態
+
+    Note over O,FS: 階段五：匯出與送交
+
+    O->>FE: 選擇匯出格式
+    FE->>API: POST /api/export/generate
+    API->>DB: 讀取案件+欄位+證據+校對紀錄
+    API->>API: 產生報案摘要 / 情資清單
+    API->>FS: 儲存匯出檔案 (加浮水印)
+    API->>DB: INSERT export_records
+    API->>DB: INSERT audit_log (export_generate)
+    API-->>FE: 下載連結 / 剪貼簿內容
+
+    Note over O,FS: 階段六：移送上級（選配）
+
+    O->>FE: 點擊「送交上級」
+    FE->>API: POST /api/cases/{id}/transfer
+    API->>API: 打包完整 Package
+    Note right of API: 含：原始證據 + OCR<br/>+ 抽取結果 + 校對紀錄<br/>+ 稽核日誌
+    API->>FS: 儲存移送包
+    API->>DB: INSERT case_transfers
+    API->>DB: UPDATE case (status=transferred)
+    API->>DB: INSERT audit_log (case_transfer)
+    API-->>FE: 移送完成
