@@ -13,7 +13,7 @@ import {
 } from "../db";
 
 // ── Surya OCR 微服務位址 ─────────────────────────────────────────────────────
-const SURYA_SERVICE_URL = process.env.SURYA_SERVICE_URL || "http://localhost:8765";
+const SURYA_SERVICE_URL = process.env.SURYA_SERVICE_URL || "http://localhost:18765";
 
 /**
  * 呼叫 Surya OCR 微服務對多張圖片進行批次辨識

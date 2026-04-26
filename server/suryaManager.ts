@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let suryaProcess: ChildProcess | null = null;
 
-const SURYA_PORT = parseInt(process.env.SURYA_SERVICE_PORT || "8765");
+const SURYA_PORT = parseInt(process.env.SURYA_SERVICE_PORT || "18765");
 const SURYA_SCRIPT = path.resolve(__dirname, "../surya-service/ocr_service.py");
 
 /**

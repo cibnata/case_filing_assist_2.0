@@ -186,6 +186,6 @@ def ocr_batch(req: OcrBatchRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("OCR_SERVICE_PORT", "8765"))
+    port = int(os.environ.get("OCR_SERVICE_PORT", "18765"))
     logger.info(f"Surya OCR 微服務啟動於 port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
