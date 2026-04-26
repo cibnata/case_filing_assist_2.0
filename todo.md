@@ -54,8 +54,8 @@
 ## Phase 8: 測試與部署
 - [x] Vitest 單元測試（12 個測試全部通過）
 - [x] Surya OCR Python 微服務整合（port 8765）
-- [ ] GitHub 推送
-- [ ] Checkpoint 儲存
+- [x] GitHub 推送
+- [x] Checkpoint 儲存
 
 ## Phase 筆錄產生功能（新增）
 - [x] 新增 interrogation_records 資料表（筆錄問答 JSON、狀態、產生時間）
@@ -80,3 +80,7 @@
 - [x] 前端設定頁面：/settings 路由，顯示目前 Key（遮罩）、輸入新 Key、儲存確認
 - [x] 側邊欄加入「系統設定」導覽項目
 - [x] Vitest 測試：settings.getAll / update / getStatus（17 個測試全部通過）
+
+## API Key 測試案例（新增）
+- [x] 撰寫 settings.ts 完整 Vitest 測試檔（27 個測試，涵蓋所有邊界條件）
+- [x] 撰寫手動測試指引文件（docs/api-key-settings-test-guide.md）
