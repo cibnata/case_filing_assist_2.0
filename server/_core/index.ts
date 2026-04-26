@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import { startSuryaService } from "../suryaManager";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -29,6 +30,9 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
+  // 啟動 Surya OCR 微服務（非阻塞，失敗時使用 VLM fallback）
+  startSuryaService().catch(err => console.warn("[Surya OCR] 啟動失敗:", err.message));
+
   const app = express();
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads
