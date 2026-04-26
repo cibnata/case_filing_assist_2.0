@@ -84,3 +84,10 @@
 ## API Key 測試案例（新增）
 - [x] 撰寫 settings.ts 完整 Vitest 測試檔（27 個測試，涵蓋所有邊界條件）
 - [x] 撰寫手動測試指引文件（docs/api-key-settings-test-guide.md）
+
+## 簡單登入與單位設定（已完成）
+- [x] 登入改為簡單帳號密碼（test/test），繞過 Manus OAuth
+- [x] 後端加入 simpleAuth router（login mutation，test/test 進管理員，其他帳號密碼相同進一般員警）
+- [x] 系統設定頁加入「單位資訊」區塊（單位名稱、員警姓名、警號），所有登入使用者可設定
+- [x] 建案時自動帶入設定中的單位與姓名（unit/badgeNumber 欄位存於 users 表）
+- [x] 46 個 Vitest 測試全部通過

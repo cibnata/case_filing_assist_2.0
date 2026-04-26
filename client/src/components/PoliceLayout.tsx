@@ -20,7 +20,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import {
   LayoutDashboard,
@@ -30,12 +29,18 @@ import {
   Shield,
   ChevronDown,
   Settings,
+  Eye,
+  EyeOff,
+  Loader2,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 import { LOGO_URL, APP_TITLE } from "@/lib/constants";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "首頁總覽", path: "/" },
@@ -48,6 +53,106 @@ const SIDEBAR_WIDTH_KEY = "police-sidebar-width";
 const DEFAULT_WIDTH = 240;
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 360;
+
+/** 簡易登入表單 */
+function SimpleLoginForm() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const utils = trpc.useUtils();
+
+  const loginMutation = trpc.simpleAuth.login.useMutation({
+    onSuccess: async () => {
+      toast.success("登入成功");
+      // 重新整理 auth.me 以更新登入狀態
+      await utils.auth.me.invalidate();
+    },
+    onError: (err) => {
+      toast.error("登入失敗：" + err.message);
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!username.trim() || !password.trim()) {
+      toast.error("請輸入帳號與密碼");
+      return;
+    }
+    loginMutation.mutate({ username: username.trim(), password: password.trim() });
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="flex flex-col items-center gap-8 p-8 max-w-sm w-full">
+        {/* Logo + 標題 */}
+        <div className="flex flex-col items-center gap-4">
+          <img src={LOGO_URL} alt="警察局" className="w-24 h-24 drop-shadow-lg" />
+          <h1 className="text-2xl font-bold text-foreground text-center">{APP_TITLE}</h1>
+          <p className="text-sm text-muted-foreground text-center">
+            本系統限授權員警使用，請輸入帳號密碼登入。
+          </p>
+        </div>
+
+        {/* 登入表單 */}
+        <form onSubmit={handleSubmit} className="w-full space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="username" className="text-sm font-medium">帳號</Label>
+            <Input
+              id="username"
+              type="text"
+              placeholder="請輸入帳號"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              disabled={loginMutation.isPending}
+              className="bg-background/50"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-sm font-medium">密碼</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="請輸入密碼"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                disabled={loginMutation.isPending}
+                className="bg-background/50 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          <Button
+            type="submit"
+            size="lg"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+            disabled={loginMutation.isPending}
+          >
+            {loginMutation.isPending ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />登入中...</>
+            ) : (
+              <><Shield className="mr-2 h-4 w-4" />員警登入</>
+            )}
+          </Button>
+        </form>
+
+        {/* 提示文字 */}
+        <p className="text-xs text-muted-foreground/60 text-center">
+          測試帳號：test ／ 密碼：test
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function PoliceLayout({ children }: { children: React.ReactNode }) {
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -72,27 +177,7 @@ export default function PoliceLayout({ children }: { children: React.ReactNode }
   }
 
   if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="flex flex-col items-center gap-8 p-8 max-w-sm w-full">
-          <div className="flex flex-col items-center gap-4">
-            <img src={LOGO_URL} alt="警察局" className="w-24 h-24" />
-            <h1 className="text-2xl font-bold text-foreground text-center">{APP_TITLE}</h1>
-            <p className="text-sm text-muted-foreground text-center">
-              本系統限授權員警使用，請先登入以繼續。
-            </p>
-          </div>
-          <Button
-            onClick={() => { window.location.href = getLoginUrl(); }}
-            size="lg"
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-          >
-            <Shield className="mr-2 h-4 w-4" />
-            員警登入
-          </Button>
-        </div>
-      </div>
-    );
+    return <SimpleLoginForm />;
   }
 
   return (

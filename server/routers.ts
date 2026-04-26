@@ -8,6 +8,7 @@ import { ocrRouter } from "./routers/ocr";
 import { walletsRouter } from "./routers/wallets";
 import { interrogationRouter } from "./routers/interrogation";
 import { settingsRouter } from "./routers/settings";
+import { simpleAuthRouter } from "./routers/simpleAuth";
 
 export const appRouter = router({
   system: systemRouter,
@@ -25,6 +26,7 @@ export const appRouter = router({
   wallets: walletsRouter,
   interrogation: interrogationRouter,
   settings: settingsRouter,
+  simpleAuth: simpleAuthRouter,
 });
 
 export type AppRouter = typeof appRouter;
