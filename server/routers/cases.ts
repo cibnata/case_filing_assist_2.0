@@ -37,7 +37,6 @@ export const casesRouter = router({
   updateProfile: protectedProcedure
     .input(z.object({
       unit: z.string().min(1),
-      badgeNumber: z.string().optional(),
       name: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {

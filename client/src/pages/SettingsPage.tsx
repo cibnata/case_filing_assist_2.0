@@ -46,7 +46,6 @@ function UnitInfoSection() {
 
   const [unitName, setUnitName] = useState(officerUser?.unit || "");
   const [officerName, setOfficerName] = useState(officerUser?.name || "");
-  const [badgeNumber, setBadgeNumber] = useState(officerUser?.badgeNumber || "");
   const [isDirty, setIsDirty] = useState(false);
 
   const updateProfileMutation = trpc.cases.updateProfile.useMutation({
@@ -73,7 +72,6 @@ function UnitInfoSection() {
     updateProfileMutation.mutate({
       unit: unitName.trim(),
       name: officerName.trim() || undefined,
-      badgeNumber: badgeNumber.trim() || undefined,
     });
   };
 
@@ -124,24 +122,11 @@ function UnitInfoSection() {
             />
           </div>
 
-          {/* 警號 */}
-          <div className="space-y-1.5">
-            <Label htmlFor="badge-number" className="text-xs font-medium flex items-center gap-1.5">
-              <BadgeCheck className="h-3.5 w-3.5 text-muted-foreground" />
-              警號
-            </Label>
-            <Input
-              id="badge-number"
-              placeholder="例：A12345"
-              value={badgeNumber}
-              onChange={handleChange(setBadgeNumber)}
-              className="text-sm"
-            />
-          </div>
+
         </div>
 
         {/* 目前設定預覽 */}
-        {(officerUser?.unit || officerUser?.badgeNumber) && !isDirty && (
+        {officerUser?.unit && !isDirty && (
           <div className="p-3 rounded-lg bg-muted/30 border border-border/40 space-y-1">
             <p className="text-xs text-muted-foreground font-medium">目前已儲存的設定</p>
             {officerUser?.unit && (
@@ -154,11 +139,7 @@ function UnitInfoSection() {
                 <span className="text-muted-foreground">姓名：</span>{officerUser.name}
               </p>
             )}
-            {officerUser?.badgeNumber && (
-              <p className="text-xs text-foreground/80">
-                <span className="text-muted-foreground">警號：</span>{officerUser.badgeNumber}
-              </p>
-            )}
+
           </div>
         )}
 
