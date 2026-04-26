@@ -10,6 +10,7 @@ import CaseCreate from "./pages/CaseCreate";
 import CaseDetail from "./pages/CaseDetail";
 import ReportPage from "./pages/ReportPage";
 import InterrogationPage from "./pages/InterrogationPage";
+import SettingsPage from "./pages/SettingsPage";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/cases/new" component={CaseCreate} />
       <Route path="/cases/:id" component={CaseDetail} />
       <Route path="/cases/:id/interrogation" component={InterrogationPage} />
+      <Route path="/settings" component={SettingsPage} />
       {/* 報案人端（公開，無需登入） */}
       <Route path="/report/:token" component={ReportPage} />
       <Route path="/404" component={NotFound} />

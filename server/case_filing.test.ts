@@ -67,6 +67,24 @@ vi.mock("./db", () => ({
   upsertInterrogationRecord: vi.fn().mockResolvedValue(undefined),
   getWalletProfilesByCaseId: vi.fn().mockResolvedValue([]),
   upsertWalletProfile: vi.fn().mockResolvedValue(undefined),
+  deleteWalletProfilesByCaseId: vi.fn().mockResolvedValue(undefined),
+  createWalletProfile: vi.fn().mockResolvedValue(undefined),
+  // system settings
+  getSystemSetting: vi.fn().mockImplementation(async (key: string) => {
+    if (key === "ETHERSCAN_API_KEY") return "abcd1234efgh5678";
+    return null;
+  }),
+  upsertSystemSetting: vi.fn().mockResolvedValue(undefined),
+  getAllSystemSettings: vi.fn().mockResolvedValue([
+    {
+      id: 1,
+      settingKey: "ETHERSCAN_API_KEY",
+      settingValue: "abcd1234efgh5678",
+      description: "Etherscan API Key",
+      updatedAt: new Date(),
+      updatedBy: 1,
+    },
+  ]),
 }));
 
 vi.mock("./_core/llm", () => ({
@@ -109,6 +127,24 @@ function createOfficerContext(overrides: Partial<TrpcContext["user"]> = {}): Trp
       updatedAt: new Date(),
       lastSignedIn: new Date(),
       ...overrides,
+    },
+    req: { protocol: "https", headers: {} } as TrpcContext["req"],
+    res: { clearCookie: vi.fn() } as unknown as TrpcContext["res"],
+  };
+}
+
+function createAdminContext(): TrpcContext {
+  return {
+    user: {
+      id: 99,
+      openId: "admin-001",
+      email: "admin@police.gov.tw",
+      name: "管理員",
+      loginMethod: "manus",
+      role: "admin",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastSignedIn: new Date(),
     },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
     res: { clearCookie: vi.fn() } as unknown as TrpcContext["res"],
@@ -295,5 +331,73 @@ describe("auth.logout", () => {
     const result = await caller.auth.logout();
 
     expect(result.success).toBe(true);
+  });
+});
+
+// ── settings router 測試 ─────────────────────────────────────────────────────────────────────────────────
+describe("settings.getAll", () => {
+  it("管理員可以取得所有系統設定，且 Key 已遮罩", async () => {
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.settings.getAll();
+    expect(Array.isArray(result)).toBe(true);
+    const ethSetting = result.find(s => s.settingKey === "ETHERSCAN_API_KEY");
+    expect(ethSetting).toBeDefined();
+    expect(ethSetting?.isSet).toBe(true);
+    // 遮罩後不應包含完整 Key
+    expect(ethSetting?.settingValue).not.toBe("abcd1234efgh5678");
+  });
+
+  it("一般員警無法存取系統設定（FORBIDDEN）", async () => {
+    const ctx = createOfficerContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.settings.getAll()).rejects.toThrow();
+  });
+});
+
+describe("settings.update", () => {
+  it("管理員可以更新 API Key", async () => {
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.settings.update({
+      key: "ETHERSCAN_API_KEY",
+      value: "new-api-key-12345",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("一般員警無法更新 API Key（FORBIDDEN）", async () => {
+    const ctx = createOfficerContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.settings.update({ key: "ETHERSCAN_API_KEY", value: "test" })
+    ).rejects.toThrow();
+  });
+});
+
+describe("settings.clear", () => {
+  it("管理員可以清除 API Key", async () => {
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.settings.clear({ key: "ETHERSCAN_API_KEY" });
+    expect(result.success).toBe(true);
+  });
+
+  it("一般員警無法清除 API Key（FORBIDDEN）", async () => {
+    const ctx = createOfficerContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.settings.clear({ key: "ETHERSCAN_API_KEY" })
+    ).rejects.toThrow();
+  });
+});
+
+describe("settings.getStatus", () => {
+  it("登入員警可以查詢 API Key 設定狀態", async () => {
+    const ctx = createOfficerContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.settings.getStatus();
+    expect(result.ETHERSCAN_API_KEY.isSet).toBe(true);
+    expect(result.TRONSCAN_API_KEY.isSet).toBe(false);
   });
 });

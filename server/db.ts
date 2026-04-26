@@ -10,6 +10,7 @@ import {
   intelReports,
   walletProfiles,
   interrogationRecords,
+  systemSettings,
   type InsertCase,
   type InsertReporter,
   type InsertEvidenceFile,
@@ -223,4 +224,31 @@ export async function getInterrogationRecordByCaseId(caseId: number) {
   if (!db) return undefined;
   const result = await db.select().from(interrogationRecords).where(eq(interrogationRecords.caseId, caseId)).limit(1);
   return result[0];
+}
+
+// ─── System Settings ──────────────────────────────────────────────────────────
+export async function getSystemSetting(key: string): Promise<string | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(systemSettings).where(eq(systemSettings.settingKey, key)).limit(1);
+  return result[0]?.settingValue ?? null;
+}
+
+export async function upsertSystemSetting(key: string, value: string, description?: string, updatedBy?: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(systemSettings).values({
+    settingKey: key,
+    settingValue: value,
+    description: description ?? null,
+    updatedBy: updatedBy ?? null,
+  }).onDuplicateKeyUpdate({
+    set: { settingValue: value, updatedBy: updatedBy ?? null },
+  });
+}
+
+export async function getAllSystemSettings() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(systemSettings);
 }

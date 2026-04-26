@@ -7,6 +7,7 @@ import { uploadRouter } from "./routers/upload";
 import { ocrRouter } from "./routers/ocr";
 import { walletsRouter } from "./routers/wallets";
 import { interrogationRouter } from "./routers/interrogation";
+import { settingsRouter } from "./routers/settings";
 
 export const appRouter = router({
   system: systemRouter,
@@ -23,6 +24,7 @@ export const appRouter = router({
   ocr: ocrRouter,
   wallets: walletsRouter,
   interrogation: interrogationRouter,
+  settings: settingsRouter,
 });
 
 export type AppRouter = typeof appRouter;

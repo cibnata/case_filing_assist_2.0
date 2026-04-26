@@ -41,6 +41,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "首頁總覽", path: "/" },
   { icon: FolderOpen, label: "案件管理", path: "/cases" },
   { icon: PlusCircle, label: "新建案件", path: "/cases/new" },
+  { icon: Settings, label: "系統設定", path: "/settings" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "police-sidebar-width";
@@ -179,7 +180,7 @@ function PoliceLayoutContent({
             <SidebarMenu className="px-2 py-1">
               {menuItems.map(item => {
                 const isActive = location === item.path ||
-                  (item.path === "/cases" && location.startsWith("/cases") && location !== "/cases/new");
+                  (item.path === "/cases" && location.startsWith("/cases") && location !== "/cases/new" && !location.startsWith("/cases/new"));
                 return (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton
@@ -223,9 +224,9 @@ function PoliceLayoutContent({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => setLocation("/")}>
+                <DropdownMenuItem onClick={() => setLocation("/settings")}>
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>個人設定</span>
+                  <span>系統設定</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

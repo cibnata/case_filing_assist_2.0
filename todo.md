@@ -71,3 +71,12 @@
 - [x] 筆錄預覽介面：依調查筆錄格式排版，顯示問答對話
 - [x] 筆錄可供警員編輯後列印 / 匯出 PDF
 - [x] 筆錄表頭帶入：詢問時間、地點、案由、受詢問人基本資料（含家庭經濟狀況）
+
+## API Key 管理功能（已完成）
+- [x] 新增 system_settings 資料表（key/value 形式，儲存 ETHERSCAN_API_KEY、TRONSCAN_API_KEY）
+- [x] 後端 API：getAll / update / clear / getStatus（限管理員寫入）
+- [x] 錢包查詢 router 改為從資料庫讀取 API Key（優先於環境變數）
+- [x] Tronscan 查詢加入 TRON-PRO-API-KEY header
+- [x] 前端設定頁面：/settings 路由，顯示目前 Key（遮罩）、輸入新 Key、儲存確認
+- [x] 側邊欄加入「系統設定」導覽項目
+- [x] Vitest 測試：settings.getAll / update / getStatus（17 個測試全部通過）

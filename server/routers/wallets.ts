@@ -6,6 +6,7 @@ import {
   createWalletProfile,
   getWalletProfilesByCaseId,
   deleteWalletProfilesByCaseId,
+  getSystemSetting,
 } from "../db";
 
 // ─── 識別錢包鏈別 ─────────────────────────────────────────────────────────────
@@ -17,9 +18,8 @@ function detectChain(address: string): "ETH" | "TRON" | "BTC" | "unknown" {
 }
 
 // ─── 查詢 ETH 錢包（Etherscan） ───────────────────────────────────────────────
-async function queryEthWallet(address: string) {
+async function queryEthWallet(address: string, apiKey: string = "") {
   try {
-    const apiKey = process.env.ETHERSCAN_API_KEY || "";
     const baseUrl = "https://api.etherscan.io/api";
 
     // 取得交易列表
@@ -74,24 +74,24 @@ async function queryEthWallet(address: string) {
 }
 
 // ─── 查詢 TRON 錢包（Tronscan） ───────────────────────────────────────────────
-async function queryTronWallet(address: string) {
-  try {
+async function queryTronWallet(address: string, apiKey: string = "") {
+   try {
     const baseUrl = "https://apilist.tronscanapi.com/api";
-
+    const tronHeaders: Record<string, string> = apiKey ? { "TRON-PRO-API-KEY": apiKey } : {};
     // 帳戶資訊
-    const accountRes = await fetch(`${baseUrl}/accountv2?address=${address}`);
+    const accountRes = await fetch(`${baseUrl}/accountv2?address=${address}`, { headers: tronHeaders });
     const accountData = await accountRes.json() as any;
-
     // 交易列表
     const txRes = await fetch(
-      `${baseUrl}/transaction?address=${address}&limit=50&start=0&sort=-timestamp`
+      `${baseUrl}/transaction?address=${address}&limit=50&start=0&sort=-timestamp`,
+      { headers: tronHeaders }
     );
     const txData = await txRes.json() as any;
     const txList = (txData.data as any[]) || [];
-
     // TRC-20 代幣轉帳
     const trc20Res = await fetch(
-      `${baseUrl}/token_trc20/transfers?relatedAddress=${address}&limit=50&start=0&sort=-timestamp`
+      `${baseUrl}/token_trc20/transfers?relatedAddress=${address}&limit=50&start=0&sort=-timestamp`,
+      { headers: tronHeaders }
     );
     const trc20Data = await trc20Res.json() as any;
     const trc20List = (trc20Data.token_transfers as any[]) || [];
@@ -159,17 +159,19 @@ export const walletsRouter = router({
       // 清除舊的查詢結果
       await deleteWalletProfilesByCaseId(input.caseId);
 
+      // 從資料庫讀取 API Key（優先），fallback 至環境變數
+      const ethApiKey = (await getSystemSetting("ETHERSCAN_API_KEY")) || process.env.ETHERSCAN_API_KEY || "";
+      const tronApiKey = (await getSystemSetting("TRONSCAN_API_KEY")) || process.env.TRONSCAN_API_KEY || "";
+
       const results = [];
       for (const address of input.addresses) {
         const chain = detectChain(address);
         let walletData: any = null;
-
         if (chain === "ETH") {
-          walletData = await queryEthWallet(address);
-        } else if (chain === "TRON") {
-          walletData = await queryTronWallet(address);
+          walletData = await queryEthWallet(address, ethApiKey);
+         } else if (chain === "TRON") {
+          walletData = await queryTronWallet(address, tronApiKey);
         }
-
         if (walletData) {
           await createWalletProfile({
             caseId: input.caseId,

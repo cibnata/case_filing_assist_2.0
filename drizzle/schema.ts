@@ -176,3 +176,15 @@ export const interrogationRecords = mysqlTable("interrogation_records", {
 
 export type InterrogationRecord = typeof interrogationRecords.$inferSelect;
 export type InsertInterrogationRecord = typeof interrogationRecords.$inferInsert;
+
+// ─── 系統設定表 ──────────────────────────────────────────────────────────────
+export const systemSettings = mysqlTable("system_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  settingKey: varchar("settingKey", { length: 128 }).notNull().unique(),
+  settingValue: text("settingValue"),
+  description: text("description"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedBy: int("updatedBy"),
+});
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export type InsertSystemSetting = typeof systemSettings.$inferInsert;
