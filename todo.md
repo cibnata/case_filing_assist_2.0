@@ -104,3 +104,10 @@
 - [x] 修正 TypeScript 型別錯誤（gender/education/economicStatus 使用嚴格 enum 型別）
 - [x] 更新 constants.ts（EDUCATION_OPTIONS 與後端 enum 一致，新增 GenderOption/EducationOption/EconomicStatusOption 型別）
 - [x] 46 個 Vitest 測試全部通過
+
+## OCR 辨識流程改版（進行中）
+- [ ] 修正 Surya OCR 微服務啟動問題（SRE module mismatch），確保 port 18765 正常運作
+- [ ] OCR 後端確認支援 JPEG 格式（圖片轉換/傳送邏輯）
+- [ ] 前端 CaseDetail OCR Tab：改為點選單張圖片後立即觸發該圖片 OCR 辨識
+- [ ] 每張圖片顯示獨立辨識狀態（待辨識/辨識中/已完成/失敗）
+- [ ] 點選已辨識圖片可查看該圖片的 OCR 文字結果

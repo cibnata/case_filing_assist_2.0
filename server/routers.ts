@@ -9,6 +9,7 @@ import { walletsRouter } from "./routers/wallets";
 import { interrogationRouter } from "./routers/interrogation";
 import { settingsRouter } from "./routers/settings";
 import { simpleAuthRouter } from "./routers/simpleAuth";
+import { demoRouter } from "./routers/demo";
 
 export const appRouter = router({
   system: systemRouter,
@@ -27,6 +28,7 @@ export const appRouter = router({
   interrogation: interrogationRouter,
   settings: settingsRouter,
   simpleAuth: simpleAuthRouter,
+  demo: demoRouter,
 });
 
 export type AppRouter = typeof appRouter;
