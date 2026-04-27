@@ -26,13 +26,13 @@ function DemoCaseList({ onSelect }: { onSelect: (id: number) => void }) {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <FolderOpen className="h-5 w-5 text-primary" />
+          <h1 className="text-xl font-bold flex items-center gap-2" style={{color:"#1a3a5c"}}>
+            <FolderOpen className="h-5 w-5" style={{color:"#1a3a5c"}} />
             案件管理
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">共 {cases.length} 件案件（示範資料）</p>
+          <p className="text-sm mt-0.5" style={{color:"#4a7aa0"}}>共 {cases.length} 件案件（示範資料）</p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2" disabled>
+        <Button className="gap-2 text-white" style={{backgroundColor:"#1a3a5c"}} disabled>
           <PlusCircle className="h-4 w-4" />新建案件
         </Button>
       </div>
@@ -46,19 +46,19 @@ function DemoCaseList({ onSelect }: { onSelect: (id: number) => void }) {
             return (
               <Card
                 key={c.id}
-                className="bg-card border-border/50 cursor-pointer hover:border-primary/40 transition-all"
+                className="bg-card border cursor-pointer hover:shadow-md transition-all" style={{borderColor:"#d1dce8"}}
                 onClick={() => onSelect(c.id)}
               >
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4 min-w-0">
-                      <div className="w-1 h-10 rounded-full bg-primary shrink-0" />
+                      <div className="w-1 h-10 rounded-full shrink-0" style={{backgroundColor:"#1a3a5c"}} />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono font-semibold text-sm text-foreground">{c.caseNumber}</span>
+                          <span className="font-mono font-semibold text-sm" style={{color:"#1a3a5c"}}>{c.caseNumber}</span>
                           <Badge className={`text-xs px-2 py-0 ${statusInfo.color}`}>{statusInfo.label}</Badge>
                         </div>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-3 mt-1 text-xs" style={{color:"#4a7aa0"}}>
                           <span>{c.officerName}</span>
                           <span>·</span>
                           <span>{c.officerUnit}</span>
@@ -67,7 +67,7 @@ function DemoCaseList({ onSelect }: { onSelect: (id: number) => void }) {
                         </div>
                       </div>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <ChevronRight className="h-4 w-4 shrink-0" style={{color:"#4a7aa0"}} />
                   </div>
                 </CardContent>
               </Card>
@@ -101,28 +101,28 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
       {/* 頁頭 */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={onBack} className="text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="sm" onClick={onBack} className="hover:bg-blue-50" style={{color:"#4a7aa0"}}>
             <ArrowLeft className="h-4 w-4 mr-1" />返回
           </Button>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-bold text-foreground font-mono">{c.caseNumber}</h1>
+              <h1 className="text-xl font-bold font-mono" style={{color:"#1a3a5c"}}>{c.caseNumber}</h1>
               <Badge className={`text-xs px-2 py-0.5 ${statusInfo.color}`}>{statusInfo.label}</Badge>
-              <Badge variant="outline" className="text-xs text-yellow-400 border-yellow-400/50">示範資料</Badge>
+              <Badge variant="outline" className="text-xs" style={{color:"#b45309", borderColor:"#b45309"}}>示範資料</Badge>
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-xs mt-0.5" style={{color:"#4a7aa0"}}>
               {c.officerName} · {c.officerUnit} · {new Date(c.createdAt).toLocaleString("zh-TW")}
             </p>
           </div>
         </div>
-        <Button size="sm" onClick={onInterrogation} className="gap-1 text-xs bg-primary hover:bg-primary/90">
+        <Button size="sm" onClick={onInterrogation} className="gap-1 text-xs text-white" style={{backgroundColor:"#1a3a5c"}}>
           <FileText className="h-3 w-3" />調查筆錄
         </Button>
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-secondary/50 border border-border/50 flex-wrap h-auto">
+        <TabsList className="flex-wrap h-auto border" style={{backgroundColor:"#eef3f8", borderColor:"#d1dce8"}}>
           <TabsTrigger value="overview" className="text-xs">概覽</TabsTrigger>
           <TabsTrigger value="evidence" className="text-xs">證物 ({evidenceFiles.length})</TabsTrigger>
           <TabsTrigger value="ocr" className="text-xs">OCR 辨識</TabsTrigger>
@@ -134,10 +134,10 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
         {/* ── 概覽 ── */}
         <TabsContent value="overview" className="space-y-4 mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="bg-card border-border/50">
+            <Card className="bg-card border" style={{borderColor:"#d1dce8"}}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-primary" />案件資訊
+                <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{color:"#1a3a5c"}}>
+                  <Shield className="h-4 w-4" style={{color:"#1a3a5c"}} />案件資訊
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
@@ -149,17 +149,17 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
                   ["案件備註", c.notes],
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between gap-2">
-                    <span className="text-muted-foreground text-xs shrink-0">{label}</span>
-                    <span className="text-foreground text-xs text-right">{value}</span>
+                    <span className="text-xs shrink-0" style={{color:"#4a7aa0"}}>{label}</span>
+                    <span className="text-xs text-right" style={{color:"#1a3a5c"}}>{value}</span>
                   </div>
                 ))}
               </CardContent>
             </Card>
 
-            <Card className="bg-card border-border/50">
+            <Card className="bg-card border" style={{borderColor:"#d1dce8"}}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <User className="h-4 w-4 text-primary" />報案人資訊
+                <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{color:"#1a3a5c"}}>
+                  <User className="h-4 w-4" style={{color:"#1a3a5c"}} />報案人資訊
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
@@ -180,32 +180,32 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
                       ["報案類別", reporter.caseType],
                     ].map(([label, value]) => (
                       <div key={label} className="flex justify-between gap-2">
-                        <span className="text-muted-foreground text-xs shrink-0">{label}</span>
-                        <span className="text-foreground text-xs text-right">{value || "—"}</span>
+                        <span className="text-xs shrink-0" style={{color:"#4a7aa0"}}>{label}</span>
+                        <span className="text-xs text-right" style={{color:"#1a3a5c"}}>{value || "—"}</span>
                       </div>
                     ))}
                   </>
                 ) : (
-                  <p className="text-muted-foreground text-xs">尚未填寫</p>
+                  <p className="text-xs" style={{color:"#4a7aa0"}}>尚未填寫</p>
                 )}
               </CardContent>
             </Card>
           </div>
 
           {/* QR Code 區塊 */}
-          <Card className="bg-card border-border/50">
+          <Card className="bg-card border" style={{borderColor:"#d1dce8"}}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <QrCode className="h-4 w-4 text-primary" />報案 QR Code
+                <QrCode className="h-4 w-4" style={{color:"#1a3a5c"}} />報案 QR Code
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4">
-                <div className="w-24 h-24 bg-secondary/50 rounded-lg flex items-center justify-center border border-border/50">
-                  <QrCode className="h-12 w-12 text-muted-foreground" />
+                <div className="w-24 h-24 rounded-lg flex items-center justify-center border" style={{backgroundColor:"#eef3f8", borderColor:"#d1dce8"}}>
+                  <QrCode className="h-12 w-12" style={{color:"#4a7aa0"}} />
                 </div>
                 <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">掃描此 QR Code 讓民眾填寫報案資料</p>
+                  <p className="text-xs" style={{color:"#4a7aa0"}}>掃描此 QR Code 讓民眾填寫報案資料</p>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" className="gap-1 text-xs" disabled>
                       <Copy className="h-3 w-3" />複製連結
@@ -223,8 +223,8 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
         {/* ── 證物 ── */}
         <TabsContent value="evidence" className="mt-4 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Image className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold flex items-center gap-2" style={{color:"#1a3a5c"}}>
+              <Image className="h-4 w-4" style={{color:"#1a3a5c"}} />
               證物圖片（{evidenceFiles.length} 張）
             </h3>
             <Button size="sm" variant="outline" className="gap-1 text-xs" disabled>
@@ -233,7 +233,7 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {evidenceFiles.map((f: any) => (
-              <Card key={f.id} className="bg-card border-border/50 overflow-hidden cursor-pointer hover:border-primary/40 transition-all">
+              <Card key={f.id} className="bg-card border overflow-hidden cursor-pointer hover:shadow-md transition-all" style={{borderColor:"#d1dce8"}}>
                 <div className="relative">
                   <img
                     src={f.storageUrl}
@@ -248,7 +248,7 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
                 </div>
                 <CardContent className="p-2">
                   <p className="text-xs text-foreground truncate">{f.originalName}</p>
-                  <p className="text-xs text-muted-foreground">{(f.fileSize / 1024).toFixed(0)} KB</p>
+                  <p className="text-xs" style={{color:"#4a7aa0"}}>{(f.fileSize / 1024).toFixed(0)} KB</p>
                 </CardContent>
               </Card>
             ))}
@@ -259,10 +259,10 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
         <TabsContent value="ocr" className="mt-4 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <FileSearch className="h-4 w-4 text-primary" />OCR 辨識結果
+              <h3 className="text-sm font-semibold flex items-center gap-2" style={{color:"#1a3a5c"}}>
+                <FileSearch className="h-4 w-4" style={{color:"#1a3a5c"}} />OCR 辨識結果
               </h3>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs" style={{color:"#4a7aa0"}}>
                 狀態：<Badge className="text-xs ml-1 bg-green-500/20 text-green-400">已確認</Badge>
               </p>
             </div>
@@ -270,12 +270,12 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
               <Button size="sm" variant="outline" className="gap-1 text-xs" disabled>
                 <RefreshCw className="h-3 w-3" />重新辨識
               </Button>
-              <Button size="sm" className="gap-1 text-xs bg-primary" disabled>
+              <Button size="sm" className="gap-1 text-xs text-white" style={{backgroundColor:"#1a3a5c"}} disabled>
                 <CheckCircle2 className="h-3 w-3" />確認全文
               </Button>
             </div>
           </div>
-          <Card className="bg-card border-border/50">
+          <Card className="bg-card border" style={{borderColor:"#d1dce8"}}>
             <CardContent className="p-4">
               <pre className="text-xs text-foreground whitespace-pre-wrap font-mono leading-relaxed bg-secondary/30 rounded-lg p-4 max-h-80 overflow-y-auto">
                 {ocrResult.confirmedText}
@@ -287,15 +287,15 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
         {/* ── 情資分析 ── */}
         <TabsContent value="intel" className="mt-4 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Cpu className="h-4 w-4 text-primary" />情資分析結果
+            <h3 className="text-sm font-semibold flex items-center gap-2" style={{color:"#1a3a5c"}}>
+              <Cpu className="h-4 w-4" style={{color:"#1a3a5c"}} />情資分析結果
             </h3>
             <Button size="sm" variant="outline" className="gap-1 text-xs" disabled>
               <RefreshCw className="h-3 w-3" />重新分析
             </Button>
           </div>
 
-          <Card className="bg-card border-border/50">
+          <Card className="bg-card border" style={{borderColor:"#d1dce8"}}>
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">案件摘要</CardTitle>
             </CardHeader>
@@ -306,7 +306,7 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* 嫌疑人 */}
-            <Card className="bg-card border-border/50">
+            <Card className="bg-card border" style={{borderColor:"#d1dce8"}}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">嫌疑人</CardTitle>
               </CardHeader>
@@ -314,18 +314,18 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
                 {intelReport.suspects?.map((s: any, i: number) => (
                   <div key={i} className="bg-secondary/30 rounded-lg p-3 text-xs space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-foreground font-semibold">{s.alias}</span>
+                      <span className="font-semibold" style={{color:"#1a3a5c"}}>{s.alias}</span>
                       <Badge variant="outline" className="text-xs">{s.role}</Badge>
                     </div>
-                    <p className="text-muted-foreground">平台：{s.platform}</p>
-                    <p className="text-muted-foreground">帳號：{s.accounts?.join(", ")}</p>
+                    <p className="" style={{color:"#4a7aa0"}}>平台：{s.platform}</p>
+                    <p className="" style={{color:"#4a7aa0"}}>帳號：{s.accounts?.join(", ")}</p>
                   </div>
                 ))}
               </CardContent>
             </Card>
 
             {/* 相關帳號 */}
-            <Card className="bg-card border-border/50">
+            <Card className="bg-card border" style={{borderColor:"#d1dce8"}}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">相關帳號與網址</CardTitle>
               </CardHeader>
@@ -341,7 +341,7 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
           </div>
 
           {/* 時序 */}
-          <Card className="bg-card border-border/50">
+          <Card className="bg-card border" style={{borderColor:"#d1dce8"}}>
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">事件時序</CardTitle>
             </CardHeader>
@@ -350,7 +350,7 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
                 {intelReport.timeline?.map((t: any, i: number) => (
                   <div key={i} className="flex gap-3 text-xs">
                     <span className="text-primary font-mono shrink-0 w-24">{t.datetime}</span>
-                    <span className="text-foreground">{t.event}</span>
+                    <span className="" style={{color:"#1a3a5c"}}>{t.event}</span>
                   </div>
                 ))}
               </div>
@@ -359,7 +359,7 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
 
           {/* 錢包地址 */}
           {intelReport.walletAddresses?.length > 0 && (
-            <Card className="bg-card border-border/50">
+            <Card className="bg-card border" style={{borderColor:"#d1dce8"}}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">發現錢包地址</CardTitle>
               </CardHeader>
@@ -378,15 +378,15 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
         {/* ── 錢包分析 ── */}
         <TabsContent value="wallets" className="mt-4 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Wallet className="h-4 w-4 text-primary" />錢包分析（{wallets.length} 個）
+            <h3 className="text-sm font-semibold flex items-center gap-2" style={{color:"#1a3a5c"}}>
+              <Wallet className="h-4 w-4" style={{color:"#1a3a5c"}} />錢包分析（{wallets.length} 個）
             </h3>
             <Button size="sm" variant="outline" className="gap-1 text-xs" disabled>
               <RefreshCw className="h-3 w-3" />重新查詢
             </Button>
           </div>
           {wallets.map((w: any) => (
-            <Card key={w.id} className="bg-card border-border/50">
+            <Card key={w.id} className="bg-card border" style={{borderColor:"#d1dce8"}}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-xs font-semibold flex items-center gap-2">
                   <Badge className={`text-xs ${w.chain === "ETH" ? "bg-blue-500/20 text-blue-400" : "bg-red-500/20 text-red-400"}`}>{w.chain}</Badge>
@@ -401,8 +401,8 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
                     ["交易次數", w.transactionTimes],
                     ["轉入金額", w.transInAmount],
                   ].map(([label, value]) => (
-                    <div key={label} className="bg-secondary/30 rounded-lg p-2 text-center">
-                      <p className="text-xs text-muted-foreground">{label}</p>
+                    <div key={label} className="rounded-lg p-2 text-center" style={{backgroundColor:"#eef3f8"}}>
+                      <p className="text-xs" style={{color:"#4a7aa0"}}>{label}</p>
                       <p className="text-sm font-semibold text-foreground mt-0.5">{value}</p>
                     </div>
                   ))}
@@ -416,8 +416,8 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
                           <Badge className={`text-xs shrink-0 ${tx.direction === "IN" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
                             {tx.direction === "IN" ? "轉入" : "轉出"}
                           </Badge>
-                          <span className="text-foreground font-semibold">{tx.amount} {tx.tokenSymbol}</span>
-                          <span className="text-muted-foreground">{tx.date ? new Date(tx.date).toLocaleDateString("zh-TW") : ""}</span>
+                          <span className="font-semibold" style={{color:"#1a3a5c"}}>{tx.amount} {tx.tokenSymbol}</span>
+                          <span className="" style={{color:"#4a7aa0"}}>{tx.date ? new Date(tx.date).toLocaleDateString("zh-TW") : ""}</span>
                         </div>
                       ))}
                     </div>
@@ -432,23 +432,23 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
         <TabsContent value="report" className="mt-4 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
-              <h3 className="text-sm font-semibold text-foreground">案件報告</h3>
-              <p className="text-xs text-muted-foreground">整合案件所有資訊，可列印或儲存為 PDF</p>
+              <h3 className="text-sm font-semibold" style={{color:"#1a3a5c"}}>案件報告</h3>
+              <p className="text-xs" style={{color:"#4a7aa0"}}>整合案件所有資訊，可列印或儲存為 PDF</p>
             </div>
-            <Button size="sm" className="gap-1 text-xs bg-primary" disabled>
+            <Button size="sm" className="gap-1 text-xs text-white" style={{backgroundColor:"#1a3a5c"}} disabled>
               <Download className="h-3 w-3" />列印 / PDF
             </Button>
           </div>
-          <Card className="bg-card border-border/50">
+          <Card className="bg-card border" style={{borderColor:"#d1dce8"}}>
             <CardContent className="p-6 space-y-4">
-              <div className="border-b border-border/50 pb-4">
-                <h2 className="text-lg font-bold text-center text-foreground">詐騙案件報告</h2>
+              <div className="border-b pb-4" style={{borderColor:"#d1dce8"}}>
+                <h2 className="text-lg font-bold text-center" style={{color:"#1a3a5c"}}>詐騙案件報告</h2>
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div><span className="text-muted-foreground">案號：</span><span className="text-foreground font-semibold">{c.caseNumber}</span></div>
-                <div><span className="text-muted-foreground">受理日期：</span><span className="text-foreground">{new Date(c.createdAt).toLocaleDateString("zh-TW")}</span></div>
-                <div><span className="text-muted-foreground">受理單位：</span><span className="text-foreground">{c.officerUnit}</span></div>
-                <div><span className="text-muted-foreground">受理員警：</span><span className="text-foreground">{c.officerName}</span></div>
+                <div><span className="" style={{color:"#4a7aa0"}}>案號：</span><span className="font-semibold" style={{color:"#1a3a5c"}}>{c.caseNumber}</span></div>
+                <div><span className="" style={{color:"#4a7aa0"}}>受理日期：</span><span className="" style={{color:"#1a3a5c"}}>{new Date(c.createdAt).toLocaleDateString("zh-TW")}</span></div>
+                <div><span className="" style={{color:"#4a7aa0"}}>受理單位：</span><span className="" style={{color:"#1a3a5c"}}>{c.officerUnit}</span></div>
+                <div><span className="" style={{color:"#4a7aa0"}}>受理員警：</span><span className="" style={{color:"#1a3a5c"}}>{c.officerName}</span></div>
               </div>
               <div>
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">案件摘要</h3>
@@ -462,7 +462,7 @@ function DemoCaseDetail({ onBack, onInterrogation }: { onBack: () => void; onInt
                     ["出生日期", reporter.birthDate], ["現住地址", reporter.address],
                     ["電話", reporter.phone], ["報案類別", reporter.caseType],
                   ].map(([l, v]) => (
-                    <div key={l}><span className="text-muted-foreground">{l}：</span><span className="text-foreground">{v}</span></div>
+                    <div key={l}><span className="" style={{color:"#4a7aa0"}}>{l}：</span><span className="" style={{color:"#1a3a5c"}}>{v}</span></div>
                   ))}
                 </div>
               </div>
@@ -497,13 +497,13 @@ function DemoInterrogation({ onBack }: { onBack: () => void }) {
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />調查筆錄
           </h1>
-          <p className="text-xs text-muted-foreground">{c.caseNumber} · 示範資料</p>
+          <p className="text-xs" style={{color:"#4a7aa0"}}>{c.caseNumber} · 示範資料</p>
         </div>
       </div>
 
-      <Card className="bg-card border-border/50">
+      <Card className="bg-card border" style={{borderColor:"#d1dce8"}}>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold text-foreground">筆錄表頭</CardTitle>
+          <CardTitle className="text-sm font-semibold" style={{color:"#1a3a5c"}}>筆錄表頭</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-3 text-xs">
           {[
@@ -518,7 +518,7 @@ function DemoInterrogation({ onBack }: { onBack: () => void }) {
           ].map(([l, v]) => (
             <div key={l} className="flex gap-2">
               <span className="text-muted-foreground shrink-0">{l}：</span>
-              <span className="text-foreground">{v as string}</span>
+              <span className="" style={{color:"#1a3a5c"}}>{v as string}</span>
             </div>
           ))}
         </CardContent>
@@ -526,7 +526,7 @@ function DemoInterrogation({ onBack }: { onBack: () => void }) {
 
       <div className="space-y-3">
         {questions.map((q: any, i: number) => (
-          <Card key={q.id} className="bg-card border-border/50">
+          <Card key={q.id} className="bg-card border" style={{borderColor:"#d1dce8"}}>
             <CardContent className="p-4 space-y-2">
               <div className="flex items-start gap-2">
                 {q.type === "ai_suggested" ? (
@@ -535,7 +535,7 @@ function DemoInterrogation({ onBack }: { onBack: () => void }) {
                   <MessageSquare className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 )}
                 <div className="space-y-2 w-full">
-                  <p className="text-sm font-semibold text-foreground">{q.question}</p>
+                  <p className="text-sm font-semibold" style={{color:"#1a3a5c"}}>{q.question}</p>
                   <div className="bg-secondary/30 rounded-lg p-3">
                     <p className="text-sm text-foreground leading-relaxed">{q.answer}</p>
                   </div>
@@ -561,10 +561,10 @@ export default function DemoPage() {
   const { data: stats } = trpc.demo.getStats.useQuery();
 
   return (
-    <div className="min-h-screen" style={{backgroundColor: "#e8f4fd"}}>
+    <div className="min-h-screen demo-light bg-background text-foreground">
       {/* 頂部 Banner */}
-      <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2 text-center">
-        <p className="text-xs text-yellow-400">
+      <div className="px-4 py-2 text-center" style={{backgroundColor:"#1a3a5c"}}>
+        <p className="text-xs text-blue-200">
           ⚠ 示範模式 — 以下為假資料展示，所有操作按鈕均已停用
         </p>
       </div>
@@ -572,13 +572,13 @@ export default function DemoPage() {
       {/* 側邊欄 + 主內容 */}
       <div className="flex min-h-[calc(100vh-36px)]">
         {/* 側邊欄 */}
-        <div className="w-56 border-r border-blue-200 flex flex-col shrink-0" style={{backgroundColor: "#d0e8f8"}}>
-          <div className="p-4 border-b border-blue-300">
+        <div className="w-56 flex flex-col shrink-0" style={{backgroundColor:"#1a3a5c"}}>
+          <div className="p-4 border-b border-white/10">
             <div className="flex items-center gap-3">
               <img src={LOGO_URL} alt="警察局" className="w-8 h-8 object-contain" />
               <div>
-                <p className="text-xs font-bold leading-tight" style={{color:"#1a3a5c"}}>{APP_TITLE}</p>
-                <p className="text-xs" style={{color:"#4a7aa0"}}>示範模式</p>
+                <p className="text-xs font-bold leading-tight text-white">{APP_TITLE}</p>
+                <p className="text-xs text-blue-200">示範模式</p>
               </div>
             </div>
           </div>
@@ -596,18 +596,17 @@ export default function DemoPage() {
                     ? "font-semibold"
                     : "hover:bg-blue-200"
                 }`}
-                style={view === item.view ? {backgroundColor:"#2563eb", color:"#fff"} : {color:"#1a3a5c"}}
+                style={view === item.view ? {backgroundColor:"rgba(255,255,255,0.15)", color:"#fff", fontWeight:600} : {color:"rgba(255,255,255,0.75)"}}
               >
                 <item.icon className="h-4 w-4" />
                 {item.label}
               </button>
             ))}
           </nav>
-          <div className="p-4 border-t border-border/50">
+          <div className="p-4 border-t border-white/10">
             <Button
               size="sm"
-              variant="outline"
-              className="w-full text-xs"
+              className="w-full text-xs bg-white/10 hover:bg-white/20 text-white border-0"
               onClick={() => setLocation("/")}
             >
               進入正式系統
@@ -616,38 +615,38 @@ export default function DemoPage() {
         </div>
 
         {/* 主內容 */}
-        <div className="flex-1 overflow-auto p-6" style={{backgroundColor: "#eef7ff"}}>
+        <div className="flex-1 overflow-auto p-6 bg-background">
           {view === "home" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <img src={LOGO_URL} alt="警察局" className="w-12 h-12 object-contain" />
                   <div>
-                    <h1 className="text-2xl font-bold text-foreground">歡迎，陳志明 員警</h1>
-                    <p className="text-muted-foreground text-sm">新北市政府警察局板橋分局 · 詐騙案件受理輔助系統</p>
+                    <h1 className="text-2xl font-bold" style={{color:"#1a3a5c"}}>歡迎，陳志明 員警</h1>
+                    <p className="text-sm" style={{color:"#4a7aa0"}}>新北市政府警察局板橋分局 · 詐騙案件受理輔助系統</p>
                   </div>
                 </div>
-                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2" disabled>
+                <Button className="font-semibold gap-2 text-white" style={{backgroundColor:"#1a3a5c"}} disabled>
                   <PlusCircle className="h-4 w-4" />新建案件
                 </Button>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { icon: <FolderOpen className="h-5 w-5 text-blue-400" />, label: "案件總數", value: stats?.total ?? 5, color: "blue" },
-                  { icon: <Clock className="h-5 w-5 text-yellow-400" />, label: "待填寫", value: stats?.pending ?? 1, color: "yellow" },
-                  { icon: <AlertCircle className="h-5 w-5 text-orange-400" />, label: "待處理", value: stats?.submitted ?? 1, color: "orange" },
-                  { icon: <CheckCircle2 className="h-5 w-5 text-green-400" />, label: "已完成分析", value: stats?.analyzed ?? 1, color: "green" },
+                  { icon: <FolderOpen className="h-5 w-5" style={{color:"#2563eb"}} />, label: "案件總數", value: stats?.total ?? 5, color: "blue" },
+                  { icon: <Clock className="h-5 w-5" style={{color:"#d97706"}} />, label: "待填寫", value: stats?.pending ?? 1, color: "yellow" },
+                  { icon: <AlertCircle className="h-5 w-5" style={{color:"#ea580c"}} />, label: "待處理", value: stats?.submitted ?? 1, color: "orange" },
+                  { icon: <CheckCircle2 className="h-5 w-5" style={{color:"#16a34a"}} />, label: "已完成分析", value: stats?.analyzed ?? 1, color: "green" },
                 ].map(s => (
-                  <Card key={s.label} className="bg-card border-border/50">
+                  <Card key={s.label} className="bg-card border" style={{borderColor:"#d1dce8"}}>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-xl bg-${s.color}-500/10 flex items-center justify-center`}>
                           {s.icon}
                         </div>
                         <div>
-                          <p className="text-2xl font-bold text-foreground">{s.value}</p>
-                          <p className="text-xs text-muted-foreground">{s.label}</p>
+                          <p className="text-2xl font-bold" style={{color:"#1a3a5c"}}>{s.value}</p>
+                          <p className="text-xs" style={{color:"#4a7aa0"}}>{s.label}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -655,9 +654,9 @@ export default function DemoPage() {
                 ))}
               </div>
 
-              <Card className="bg-card border-border/50">
+              <Card className="bg-card border" style={{borderColor:"#d1dce8"}}>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-foreground">最近案件</CardTitle>
+                  <CardTitle className="text-sm font-semibold" style={{color:"#1a3a5c"}}>最近案件</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
@@ -670,10 +669,10 @@ export default function DemoPage() {
                       return (
                         <div key={c.num} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
                           <div className="flex items-center gap-3">
-                            <span className="font-mono text-sm text-foreground">{c.num}</span>
+                            <span className="font-mono text-sm" style={{color:"#1a3a5c"}}>{c.num}</span>
                             <Badge className={`text-xs ${si.color}`}>{si.label}</Badge>
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-3 text-xs" style={{color:"#4a7aa0"}}>
                             <span>{c.officer}</span>
                             <span>{c.time}</span>
                           </div>
