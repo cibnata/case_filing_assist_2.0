@@ -3,6 +3,7 @@ import {
   mysqlEnum,
   mysqlTable,
   text,
+  longtext,
   timestamp,
   varchar,
   json,
@@ -84,6 +85,10 @@ export const evidenceFiles = mysqlTable("evidence_files", {
   mimeType: varchar("mimeType", { length: 64 }),
   fileSize: bigint("fileSize", { mode: "number" }),
   uploadedAt: timestamp("uploadedAt").defaultNow().notNull(),
+  // 逐張圖片 OCR 狀態
+  ocrStatus: mysqlEnum("ocrStatus", ["pending", "processing", "done", "failed"]).default("pending").notNull(),
+  ocrText: longtext("ocrText"),
+  ocrProcessedAt: timestamp("ocrProcessedAt"),
 });
 
 export type EvidenceFile = typeof evidenceFiles.$inferSelect;

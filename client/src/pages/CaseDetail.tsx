@@ -5,13 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import {
   ArrowLeft, QrCode, FileText, Cpu, Wallet, Copy, ExternalLink,
   Image, CheckCircle2, AlertCircle, Clock, User, Shield,
-  RefreshCw, FileSearch, ChevronRight, Download
+  RefreshCw, FileSearch, ChevronRight, Download, Eye
 } from "lucide-react";
 import { CASE_STATUS_LABELS } from "@/lib/constants";
 
@@ -22,6 +23,8 @@ export default function CaseDetail() {
   const [activeTab, setActiveTab] = useState("overview");
   const [editingOcr, setEditingOcr] = useState(false);
   const [ocrText, setOcrText] = useState("");
+  const [processingFileIds, setProcessingFileIds] = useState<Set<number>>(new Set());
+  const [selectedOcrFile, setSelectedOcrFile] = useState<{ id: number; name: string; ocrText: string; storageUrl: string } | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -39,10 +42,36 @@ export default function CaseDetail() {
     onSuccess: () => {
       toast.success("OCR 辨識完成");
       utils.ocr.get.invalidate({ caseId });
+      utils.upload.getEvidenceFiles.invalidate({ caseId });
       utils.cases.getById.invalidate({ id: caseId });
     },
     onError: (err) => toast.error("OCR 失敗：" + err.message),
   });
+  const processSingleMutation = trpc.ocr.processSingle.useMutation({
+    onSuccess: (data) => {
+      toast.success("辨識完成！請切換至 OCR 辨識 Tab 查看結果");
+      setProcessingFileIds(prev => { const s = new Set(prev); s.delete(data.fileId); return s; });
+      utils.ocr.get.invalidate({ caseId });
+      utils.upload.getEvidenceFiles.invalidate({ caseId });
+    },
+    onError: (err, vars) => {
+      toast.error("辨識失敗：" + err.message);
+      setProcessingFileIds(prev => { const s = new Set(prev); s.delete(vars.fileId); return s; });
+    },
+  });
+  const handleOcrSingleFile = (fileId: number) => {
+    if (processingFileIds.has(fileId)) return;
+    setProcessingFileIds(prev => new Set(prev).add(fileId));
+    processSingleMutation.mutate({ fileId, caseId });
+  };
+  const handleImageClick = (f: any) => {
+    if (processingFileIds.has(f.id)) return;
+    if (f.ocrStatus === "done" && f.ocrText) {
+      setSelectedOcrFile({ id: f.id, name: f.originalName, ocrText: f.ocrText, storageUrl: f.storageUrl });
+    } else {
+      handleOcrSingleFile(f.id);
+    }
+  };
 
   const confirmOcrMutation = trpc.ocr.confirm.useMutation({
     onSuccess: () => {
@@ -206,10 +235,16 @@ export default function CaseDetail() {
                     <>
                       {[
                         ["姓名", c.reporter.name],
+                        ["性別", c.reporter.gender],
                         ["身分證字號", c.reporter.idNumber],
                         ["出生日期", c.reporter.birthDate],
+                        ["出生地", c.reporter.birthPlace],
+                        ["職業", c.reporter.occupation],
+                        ["教育程度", c.reporter.education],
+                        ["戶籍地址", c.reporter.registeredAddress],
                         ["現住地址", c.reporter.address],
                         ["電話", c.reporter.phone],
+                        ["家庭經濟狀況", c.reporter.economicStatus],
                         ["報案類別", c.reporter.caseType],
                       ].map(([label, value]) => value ? (
                         <div key={label} className="flex justify-between gap-2">
@@ -306,16 +341,8 @@ export default function CaseDetail() {
                     <Image className="h-4 w-4 text-primary" />
                     證物圖片 ({evidenceFiles?.length || 0})
                   </CardTitle>
-                  {(evidenceFiles?.length || 0) > 0 && c.status === "submitted" && (
-                    <Button
-                      size="sm"
-                      onClick={handleStartOcr}
-                      disabled={ocrMutation.isPending}
-                      className="text-xs bg-primary hover:bg-primary/90 gap-1"
-                    >
-                      <Cpu className="h-3 w-3" />
-                      {ocrMutation.isPending ? "辨識中..." : "開始 OCR 辨識"}
-                    </Button>
+                  {(evidenceFiles?.length || 0) > 0 && (
+                    <span className="text-xs text-muted-foreground">點擊圖片即可觸發 OCR 辨識</span>
                   )}
                 </div>
               </CardHeader>
@@ -327,17 +354,54 @@ export default function CaseDetail() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {evidenceFiles.map((f: any) => (
-                      <div key={f.id} className="group relative">
-                        <img
-                          src={f.storageUrl}
-                          alt={f.originalName}
-                          className="w-full h-32 object-cover rounded-lg border border-border/50 cursor-pointer hover:border-primary/50 transition-colors"
-                          onClick={() => window.open(f.storageUrl, "_blank")}
-                        />
-                        <p className="text-xs text-muted-foreground truncate mt-1">{f.originalName}</p>
-                      </div>
-                    ))}
+                    {evidenceFiles.map((f: any) => {
+                      const isProcessing = processingFileIds.has(f.id);
+                      const isDone = f.ocrStatus === "done";
+                      const isFailed = f.ocrStatus === "failed";
+                      return (
+                        <div key={f.id} className="group relative">
+                          <div className="relative">
+                            <img
+                              src={f.storageUrl}
+                              alt={f.originalName}
+                              className={`w-full h-32 object-cover rounded-lg border transition-all cursor-pointer
+                                ${isProcessing ? "opacity-60 border-yellow-500/50" : ""}
+                                ${isDone ? "border-green-500/60 hover:border-green-400" : "border-border/50 hover:border-primary/50"}
+                                ${isFailed ? "border-red-500/50" : ""}
+                              `}
+                              onClick={() => handleImageClick(f)}
+                              title={f.ocrStatus === "done" ? "點擊查看 OCR 結果" : "點擊開始 OCR 辨識"}
+                            />
+                            {/* 狀態覆蓋層 */}
+                            {isProcessing && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
+                                <Cpu className="h-6 w-6 text-yellow-300 animate-pulse" />
+                              </div>
+                            )}
+                            {isDone && !isProcessing && (
+                              <div className="absolute top-1 right-1">
+                                <CheckCircle2 className="h-4 w-4 text-green-400 drop-shadow" />
+                              </div>
+                            )}
+                            {isFailed && !isProcessing && (
+                              <div className="absolute top-1 right-1">
+                                <AlertCircle className="h-4 w-4 text-red-400 drop-shadow" />
+                              </div>
+                            )}
+                            {/* hover 提示 */}
+                            <div className="absolute inset-0 flex items-end justify-center pb-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="text-xs bg-black/70 text-white px-2 py-0.5 rounded-full">
+                                {isProcessing ? "辨識中..." : isDone ? "重新辨識" : "點擊 OCR"}
+                              </span>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate mt-1">{f.originalName}</p>
+                          {isDone && f.ocrText && (
+                            <p className="text-xs text-green-600 truncate">✓ 已辨識 {f.ocrText.length} 字</p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -352,18 +416,6 @@ export default function CaseDetail() {
                 <p className="text-xs text-muted-foreground">使用 VLM 視覺語言模型辨識圖片中的文字</p>
               </div>
               <div className="flex gap-2">
-                {(evidenceFiles?.length || 0) > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleStartOcr}
-                    disabled={ocrMutation.isPending}
-                    className="text-xs gap-1"
-                  >
-                    <RefreshCw className={`h-3 w-3 ${ocrMutation.isPending ? "animate-spin" : ""}`} />
-                    {ocrMutation.isPending ? "辨識中..." : "重新辨識"}
-                  </Button>
-                )}
                 {ocrResult && !ocrResult.confirmedText && (
                   <Button
                     size="sm"
@@ -463,7 +515,7 @@ export default function CaseDetail() {
                   <FileSearch className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-40" />
                   <p className="text-muted-foreground text-sm">尚未進行 OCR 辨識</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    請先確認報案人已上傳截圖，再點擊「開始 OCR 辨識」
+                    請切換至「證物」 Tab，點擊圖片即可觸發 OCR 辨識
                   </p>
                 </CardContent>
               </Card>
@@ -652,11 +704,57 @@ export default function CaseDetail() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* OCR 文字查看 Dialog */}
+      <Dialog open={!!selectedOcrFile} onOpenChange={(open) => !open && setSelectedOcrFile(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-2">
+              <Eye className="h-4 w-4 text-primary" />
+              OCR 辨識結果：{selectedOcrFile?.name}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedOcrFile && (
+            <div className="space-y-3">
+              <img
+                src={selectedOcrFile.storageUrl}
+                alt={selectedOcrFile.name}
+                className="w-full max-h-48 object-contain rounded-lg border border-border/50"
+              />
+              <div className="bg-secondary/30 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-2">辨識文字：</p>
+                <pre className="text-xs text-foreground whitespace-pre-wrap font-mono leading-relaxed">
+                  {selectedOcrFile.ocrText}
+                </pre>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs gap-1"
+                  onClick={() => {
+                    handleOcrSingleFile(selectedOcrFile.id);
+                    setSelectedOcrFile(null);
+                  }}
+                >
+                  <RefreshCw className="h-3 w-3" />重新辨識
+                </Button>
+                <Button
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => setSelectedOcrFile(null)}
+                >
+                  關閉
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </PoliceLayout>
   );
 }
-
-// ─── 情資報告子元件 ───────────────────────────────────────────────────────────
+// ─── 情資報告子元件件 ───────────────────────────────────────────────────────────
 function IntelReportView({ report }: { report: any }) {
   return (
     <div className="space-y-4">

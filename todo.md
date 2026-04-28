@@ -109,12 +109,22 @@
 - [x] /demo 頁面底色改為淺藍色（側邊欄 #d0e8f8、主內容 #eef7ff）
 - [x] 更新 README.md（加入系統說明、功能列表、/demo 路由說明、登入方式、資料庫 Schema、開發紀錄）
 
-## OCR 辨識流程改版（進行中）
-- [ ] 修正 Surya OCR 微服務啟動問題（SRE module mismatch），確保 port 18765 正常運作
-- [ ] OCR 後端確認支援 JPEG 格式（圖片轉換/傳送邏輯）
-- [ ] 前端 CaseDetail OCR Tab：改為點選單張圖片後立即觸發該圖片 OCR 辨識
-- [ ] 每張圖片顯示獨立辨識狀態（待辨識/辨識中/已完成/失敗）
-- [ ] 點選已辨識圖片可查看該圖片的 OCR 文字結果
+## OCR 辨識流程改版（已完成）
+- [x] 修正 Surya OCR 微服務啟動問題（FoundationPredictor 模型已下載，health check OK）
+- [x] OCR 後端支援 JPEG 格式（PIL Image.convert("RGB") 自動處理）
+- [x] 資料庫 evidence_files 表新增 ocrStatus/ocrText/ocrProcessedAt 欄位
+- [x] 後端新增 processSingle mutation（單張圖片點選觸發）
+- [x] 前端證物 Tab：點擊圖片即開始 OCR 辨識（取代原來的批次按鈕）
+- [x] 每張圖片顯示獨立辨識狀態（處理中黄色動畫/完成綠色打勾/失敗紅色警示）
+- [x] 案件詳情頁報案人資訊补充顯示（性別/出生地/職業/教育程度/戶籍地址/家庭經濟狀況）
+- [x] 筆錄 prompt 已包含所有新欄位
+- [x] 46 個 Vitest 測試全部通過
 
 ## Demo 頁面色系重設計
 - [x] 整體改為明亮穩重專業色系（政府機關風格）：白底、海軍藍側邊欄、卡片純白、文字深灰（.demo-light CSS 變數 + inline style 完全覆蓋深色主題）
+
+## OCR 改版缺口修正（已完成）
+- [x] 移除 Evidence/OCR Tab 舊的批次 OCR 按鈕（統一為點擊圖片觸發）
+- [x] 已辨識圖片點擊後顯示單張 OCR 文字查看 Dialog（含重新辨識按鈕）
+- [x] 修正 wallets.ts 的 txList/tokenTxList 防空指针處理（Array.isArray 檢查）
+- [x] 46 個 Vitest 測試全部通過，無執行期錯誤日誌

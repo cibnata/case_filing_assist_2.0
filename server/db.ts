@@ -149,6 +149,20 @@ export async function getEvidenceFilesByCaseId(caseId: number) {
   if (!db) return [];
   return db.select().from(evidenceFiles).where(eq(evidenceFiles.caseId, caseId)).orderBy(evidenceFiles.uploadedAt);
 }
+export async function getEvidenceFileById(fileId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(evidenceFiles).where(eq(evidenceFiles.id, fileId)).limit(1);
+  return result[0];
+}
+export async function updateEvidenceFileOcr(
+  fileId: number,
+  data: { ocrStatus: "pending" | "processing" | "done" | "failed"; ocrText?: string; ocrProcessedAt?: Date }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(evidenceFiles).set(data as any).where(eq(evidenceFiles.id, fileId));
+}
 
 // ─── OCR Results ─────────────────────────────────────────────────────────────
 export async function upsertOcrResult(caseId: number, data: Partial<InsertOcrResult>) {

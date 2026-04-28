@@ -5,6 +5,8 @@ import { invokeLLM } from "../_core/llm";
 import {
   getCaseById,
   getEvidenceFilesByCaseId,
+  getEvidenceFileById,
+  updateEvidenceFileOcr,
   upsertOcrResult,
   getOcrResultByCaseId,
   upsertIntelReport,
@@ -161,7 +163,77 @@ export const ocrRouter = router({
       };
     }),
 
-  // ─── 取得 OCR 結果 ───────────────────────────────────────────────────────
+  // ─── 點選單張圖片觸發 OCR 辨識 ───────────────────────────────────
+  processSingle: protectedProcedure
+    .input(z.object({ fileId: z.number(), caseId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const c = await getCaseById(input.caseId);
+      if (!c) throw new TRPCError({ code: "NOT_FOUND" });
+      if (c.officerId !== ctx.user.id && ctx.user.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+      const file = await getEvidenceFileById(input.fileId);
+      if (!file || file.caseId !== input.caseId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "証物檔案不存在" });
+      }
+      // 標記為處理中
+      await updateEvidenceFileOcr(input.fileId, { ocrStatus: "processing" });
+      // 建立完整圖片 URL
+      const appBaseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
+      const imageUrl = file.storageUrl.startsWith("http")
+        ? file.storageUrl
+        : `${appBaseUrl.replace(/\/$/, "")}${file.storageUrl}`;
+      try {
+        // 先嘗試 Surya OCR
+        let ocrText = "";
+        try {
+          const resp = await fetch(`${SURYA_SERVICE_URL}/ocr/single`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image_url: imageUrl }),
+            signal: AbortSignal.timeout(60_000),
+          });
+          if (resp.ok) {
+            const data = (await resp.json()) as { text: string };
+            ocrText = data.text || "";
+          } else {
+            throw new Error(`Surya 回應 ${resp.status}`);
+          }
+        } catch (suryaErr) {
+          console.warn("[OCR] Surya 單張不可用，切換 VLM:", suryaErr);
+          // fallback 到 VLM
+          const vlmResp = await invokeLLM({
+            messages: [
+              { role: "system", content: "你是專業的文字辨識助理，請完整辨識圖片中所有文字，包括繁體中文、英文、數字、帳號、金額、時間戳記等。" },
+              { role: "user", content: [{ type: "image_url", image_url: { url: imageUrl, detail: "high" } }, { type: "text", text: "請辨識此圖片中的所有文字內容：" }] },
+            ],
+          });
+          ocrText = (typeof vlmResp.choices[0]?.message?.content === "string" ? vlmResp.choices[0]?.message?.content : "") || "";
+        }
+        await updateEvidenceFileOcr(input.fileId, {
+          ocrStatus: "done",
+          ocrText,
+          ocrProcessedAt: new Date(),
+        });
+        // 同步更新案件層級的 OCR 合併文字
+        const allFiles = await getEvidenceFilesByCaseId(input.caseId);
+        const combinedParts = allFiles.map((f, i) => {
+          const txt = f.id === input.fileId ? ocrText : (f.ocrText || "");
+          return `=== 圖片 ${i + 1}：${f.originalName || `圖片 ${i + 1}`} ===\n${txt || "[尚未辨識]"}` ;
+        });
+        await upsertOcrResult(input.caseId, {
+          status: "done",
+          rawText: combinedParts.join("\n\n"),
+          processedAt: new Date(),
+        });
+        return { success: true, ocrText, fileId: input.fileId };
+      } catch (err) {
+        await updateEvidenceFileOcr(input.fileId, { ocrStatus: "failed" });
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `OCR 辨識失敗: ${err}` });
+      }
+    }),
+
+    // ─── 取得 OCR 結果 ─────────────────────────────
   get: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {

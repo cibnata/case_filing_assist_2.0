@@ -27,14 +27,14 @@ async function queryEthWallet(address: string, apiKey: string = "") {
       `${baseUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`
     );
     const txData = await txRes.json() as any;
-    const txList = txData.status === "1" ? (txData.result as any[]) : [];
+    const txList: any[] = (txData.status === "1" && Array.isArray(txData.result)) ? txData.result : [];
 
     // 取得 ERC-20 代幣交易
     const tokenRes = await fetch(
       `${baseUrl}?module=account&action=tokentx&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`
     );
     const tokenData = await tokenRes.json() as any;
-    const tokenTxList = tokenData.status === "1" ? (tokenData.result as any[]) : [];
+    const tokenTxList: any[] = (tokenData.status === "1" && Array.isArray(tokenData.result)) ? tokenData.result : [];
 
     const addrLower = address.toLowerCase();
     const transInTxs = txList.filter((tx: any) => tx.to?.toLowerCase() === addrLower);
