@@ -336,7 +336,7 @@ export const demoRouter = router({
 
   /** 取得假 QR Code 資訊 */
   getQrInfo: publicProcedure.query(() => ({
-    reportUrl: `${process.env.VITE_APP_URL || "https://your-app.manus.space"}/report/demo-token-001`,
+    reportUrl: `${process.env.VITE_APP_URL || "http://localhost:3000"}/report/demo-token-001`,
     qrCodeDataUrl: null,
   })),
 
