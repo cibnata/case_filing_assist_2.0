@@ -249,10 +249,10 @@ function PoliceLayoutContent({
               </button>
               {!isCollapsed && (
                 <div className="flex flex-col min-w-0">
-                  <span className="font-bold text-sm text-foreground truncate leading-tight">
+                  <span className="font-bold text-sm text-sidebar-foreground truncate leading-tight">
                     {APP_TITLE}
                   </span>
-                  <span className="text-xs text-muted-foreground truncate">
+                  <span className="text-xs text-sidebar-foreground/60 truncate">
                     {officerUser?.unit || "警察局"}
                   </span>
                 </div>
@@ -274,8 +274,8 @@ function PoliceLayoutContent({
                       tooltip={item.label}
                       className="h-10 transition-all font-normal"
                     >
-                      <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
-                      <span className={isActive ? "text-foreground font-medium" : "text-muted-foreground"}>
+                      <item.icon className={`h-4 w-4 ${isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/70"}`} />
+                      <span className={isActive ? "text-sidebar-primary-foreground font-medium" : "text-sidebar-foreground/70"}>
                         {item.label}
                       </span>
                     </SidebarMenuButton>
