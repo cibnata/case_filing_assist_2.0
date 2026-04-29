@@ -73,8 +73,8 @@ class OcrBatchResult(BaseModel):
 def load_image_from_url(url: str) -> Image.Image:
     """從 URL 下載圖片並轉為 PIL Image"""
     try:
-        # 支援 /manus-storage/ 相對路徑（透過環境變數轉換）
-        if url.startswith("/manus-storage/") or url.startswith("/"):
+        # 支援 /uploads/ 相對路徑（透過環境變數轉換）
+        if url.startswith("/uploads/") or url.startswith("/"):
             base = os.environ.get("APP_BASE_URL", "http://localhost:3000")
             url = base.rstrip("/") + url
         
