@@ -496,14 +496,26 @@ export default function CaseDetail() {
                         </Button>
                       )}
                       {ocrResult.confirmedText && (
-                        <Button
-                          onClick={handleAnalyze}
-                          disabled={analyzeMutation.isPending}
-                          className="text-xs bg-primary hover:bg-primary/90 gap-1"
-                        >
-                          <Cpu className="h-3 w-3" />
-                          {analyzeMutation.isPending ? "分析中..." : "開始情資分析"}
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setOcrText(ocrResult.confirmedText || "");
+                              setEditingOcr(true);
+                            }}
+                            className="text-xs gap-1"
+                          >
+                            <CheckCircle2 className="h-3 w-3" />重新編輯全文
+                          </Button>
+                          <Button
+                            onClick={handleAnalyze}
+                            disabled={analyzeMutation.isPending}
+                            className="text-xs bg-primary hover:bg-primary/90 gap-1"
+                          >
+                            <Cpu className="h-3 w-3" />
+                            {analyzeMutation.isPending ? "分析中..." : "開始情資分析"}
+                          </Button>
+                        </div>
                       )}
                     </div>
                   )}
