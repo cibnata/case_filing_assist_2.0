@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "wouter";
 import {
   Shield, Upload, X, CheckCircle2, AlertCircle, ChevronRight
@@ -48,6 +48,12 @@ export default function ReportPage() {
 
   const { data: caseInfo, isLoading: verifying, error: verifyError } =
     trpc.cases.validateQrToken.useQuery({ token: token || "" }, { enabled: !!token });
+
+  useEffect(() => {
+    if (caseInfo?.valid && caseInfo.reporterSubmitted) {
+      setStep("upload");
+    }
+  }, [caseInfo?.valid, caseInfo?.reporterSubmitted]);
 
   const submitReporterMutation = trpc.cases.submitReporter.useMutation({
     onSuccess: () => { setStep("upload"); },
@@ -147,13 +153,15 @@ export default function ReportPage() {
     return (
       <ReportLayout>
         <div className="text-center py-12">
-          <CheckCircle2 className="h-12 w-12 text-green-400 mx-auto mb-3" />
-          <p className="text-foreground font-semibold">此案件已完成報案資料填寫</p>
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-3" />
+          <p className="text-foreground font-semibold">{caseInfo.message || "此案件目前不接受上傳"}</p>
           <p className="text-muted-foreground text-sm mt-1">案件編號：{caseInfo.caseNumber}</p>
         </div>
       </ReportLayout>
     );
   }
+
+  const reporterAlreadySubmitted = caseInfo.reporterSubmitted;
 
   if (step === "done") {
     return (
@@ -367,9 +375,11 @@ export default function ReportPage() {
           </Card>
 
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setStep("form")} disabled={uploading} className="flex-1">
-              返回修改
-            </Button>
+            {!reporterAlreadySubmitted && (
+              <Button variant="outline" onClick={() => setStep("form")} disabled={uploading} className="flex-1">
+                返回修改
+              </Button>
+            )}
             <Button onClick={handleUploadAll} disabled={uploading}
               className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
               {uploading ? `上傳中 ${uploadProgress}%` : files.length > 0 ? `確認提交 (${files.length} 張)` : "完成提交（無截圖）"}

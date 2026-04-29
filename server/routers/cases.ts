@@ -145,10 +145,10 @@ export const casesRouter = router({
     .query(async ({ input }) => {
       const c = await getCaseByQrToken(input.token);
       if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "無效的報案連結" });
-      if (c.status !== "pending") {
+      if (c.status === "closed") {
         return {
           valid: false,
-          message: "此案件已完成報案資料填寫",
+          message: "此案件已結案",
           caseNumber: c.caseNumber,
         };
       }
@@ -157,6 +157,8 @@ export const casesRouter = router({
         caseNumber: c.caseNumber,
         officerName: c.officerName,
         officerUnit: c.officerUnit,
+        status: c.status,
+        reporterSubmitted: c.status !== "pending",
       };
     }),
 
@@ -227,11 +229,16 @@ export const casesRouter = router({
     .mutation(async ({ input }) => {
       const c = await getCaseByQrToken(input.token);
       if (!c) throw new TRPCError({ code: "NOT_FOUND" });
+      if (c.status === "closed") {
+        throw new TRPCError({ code: "CONFLICT", message: "此案件已結案" });
+      }
       const reporter = await getReporterByCaseId(c.id);
       const files = await getEvidenceFilesByCaseId(c.id);
 
-      // 更新案件狀態為 submitted
-      await updateCaseStatus(c.id, "submitted");
+      // 第一次完成報案時才推進狀態；後續補件不可覆蓋 OCR / 分析等進度。
+      if (c.status === "pending") {
+        await updateCaseStatus(c.id, "submitted");
+      }
 
       // 通知受理員警
       await notifyOwner({
