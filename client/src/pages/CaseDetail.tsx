@@ -389,7 +389,7 @@ export default function CaseDetail() {
                               </div>
                             )}
                             {/* hover 提示 */}
-                            <div className="absolute inset-0 flex items-end justify-center pb-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute inset-0 flex items-end justify-center pb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                               <span className="text-xs bg-black/70 text-white px-2 py-0.5 rounded-full">
                                 {isProcessing ? "辨識中..." : isDone ? "重新辨識" : "點擊 OCR"}
                               </span>
