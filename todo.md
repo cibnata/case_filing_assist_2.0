@@ -128,3 +128,9 @@
 - [x] 已辨識圖片點擊後顯示單張 OCR 文字查看 Dialog（含重新辨識按鈕）
 - [x] 修正 wallets.ts 的 txList/tokenTxList 防空指针處理（Array.isArray 檢查）
 - [x] 46 個 Vitest 測試全部通過，無執行期錯誤日誌
+
+## 正式版色系同步（已完成）
+- [x] 更新 index.css :root 全域 CSS 變數為淡色海軍藍主題（白底、純白卡片、海軍藍側邊欄）
+- [x] App.tsx ThemeProvider 改為 defaultTheme="light"
+- [x] DashboardLayout 與 PoliceLayout 均使用 CSS 變數，自動套用新色系（不需修改元件）
+- [x] 正式版首頁、側邊欄、卡片、按鈕色系已全面同步為淡色海軍藍風格
