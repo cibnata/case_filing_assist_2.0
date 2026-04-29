@@ -33,9 +33,9 @@
 | **前端** | React 19 + Tailwind CSS 4 + shadcn/ui + tRPC 11 |
 | **後端** | Express 4 + tRPC 11 + Drizzle ORM |
 | **資料庫** | MySQL / TiDB |
-| **檔案儲存** | S3（Manus 內建） |
+| **檔案儲存** | 本機檔案系統（`LOCAL_STORAGE_DIR`） |
 | **OCR** | Surya OCR（Python 微服務）+ VLM fallback |
-| **LLM** | Manus 內建 LLM API（invokeLLM） |
+| **LLM** | OpenAI-compatible API（vLLM / 自架模型） |
 | **認證** | 簡易 JWT Session（simpleAuth router） |
 
 ---
@@ -43,6 +43,9 @@
 ## 快速開始
 
 ```bash
+# 複製環境變數範本，並填入 DATABASE_URL / JWT_SECRET / LLM 設定
+cp .env.example .env
+
 # 安裝依賴
 pnpm install
 
@@ -54,6 +57,26 @@ pnpm dev
 
 # 執行測試
 pnpm test
+```
+
+### 本地部署範例
+
+```bash
+# 啟動 MySQL
+docker run -d --name case-filing-mysql -p 3306:3306 \
+  -e MYSQL_ROOT_PASSWORD=password \
+  -e MYSQL_DATABASE=case_filing \
+  mysql:8
+
+# .env 範例 DATABASE_URL
+# DATABASE_URL=mysql://root:password@localhost:3306/case_filing
+
+# 安裝相依套件並套用資料庫 migration
+pnpm install
+pnpm db:push
+
+# 啟動 Node.js 後端 + Vite 開發伺服器
+pnpm dev
 ```
 
 ---
@@ -113,12 +136,17 @@ pnpm test
 
 ## 環境變數
 
-系統所需環境變數均由 Manus 平台自動注入，無需手動設定：
+請先複製 `.env.example` 為 `.env`，再依部署環境填入設定：
 
 - DATABASE_URL：MySQL 連線字串
 - JWT_SECRET：Session 簽名金鑰
-- BUILT_IN_FORGE_API_KEY：Manus LLM API 金鑰
-- BUILT_IN_FORGE_API_URL：Manus LLM API 端點
+- BUILT_IN_FORGE_API_URL：OpenAI-compatible LLM API 端點
+- BUILT_IN_FORGE_API_KEY：LLM API Bearer Token
+- LLM_MODEL：LLM 模型名稱
+- LLM_MAX_TOKENS：LLM 最大輸出 tokens
+- LOCAL_STORAGE_DIR：本機上傳檔案儲存目錄
+- APP_BASE_URL / VITE_APP_URL：對外網址（QR Code 與 OCR 圖片讀取使用）
+- SURYA_SERVICE_URL：Surya OCR 微服務位置
 
 Etherscan / Tronscan API Key 可於系統設定頁（/settings）輸入，儲存於資料庫。
 

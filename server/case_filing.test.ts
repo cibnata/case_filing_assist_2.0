@@ -38,7 +38,7 @@ vi.mock("./db", () => ({
     createdAt: new Date("2026-04-26"),
   }),
   getEvidenceFilesByCaseId: vi.fn().mockResolvedValue([
-    { id: 1, caseId: 1, storageUrl: "/manus-storage/test.jpg", originalName: "test.jpg" },
+    { id: 1, caseId: 1, storageUrl: "/uploads/test.jpg", originalName: "test.jpg" },
   ]),
   upsertOcrResult: vi.fn().mockResolvedValue(undefined),
   getOcrResultByCaseId: vi.fn().mockResolvedValue({

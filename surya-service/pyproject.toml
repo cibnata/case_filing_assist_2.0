@@ -1,0 +1,13 @@
+[project]
+name = "case-filing-surya-service"
+version = "0.1.0"
+description = "Surya OCR microservice for the case filing assistant"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi",
+  "pillow",
+  "pydantic",
+  "requests",
+  "surya-ocr",
+  "uvicorn",
+]

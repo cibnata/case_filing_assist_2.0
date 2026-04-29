@@ -14,6 +14,10 @@ let suryaProcess: ChildProcess | null = null;
 const SURYA_PORT = parseInt(process.env.SURYA_SERVICE_PORT || "18765");
 const SURYA_SCRIPT = path.resolve(__dirname, "../surya-service/ocr_service.py");
 
+function shouldAutoStartSurya(): boolean {
+  return process.env.SURYA_AUTO_START?.toLowerCase() === "true";
+}
+
 /**
  * 等待 Surya 服務就緒（最多等 60 秒）
  */
@@ -37,6 +41,11 @@ async function waitForSuryaReady(maxWaitMs = 60_000): Promise<boolean> {
  * 啟動 Surya OCR 微服務
  */
 export async function startSuryaService(): Promise<void> {
+  if (!shouldAutoStartSurya()) {
+    console.log("[Surya OCR] 自動啟動未啟用（設定 SURYA_AUTO_START=true 可啟用）");
+    return;
+  }
+
   // 先檢查是否已在運行
   try {
     const resp = await fetch(`http://localhost:${SURYA_PORT}/health`, {

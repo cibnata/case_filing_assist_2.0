@@ -1,4 +1,4 @@
-export const LOGO_URL = "/manus-storage/police_logo_0675c601.png";
+export const LOGO_URL = "/favicon.svg";
 export const APP_TITLE = "詐騙案件受理輔助系統";
 export const APP_SUBTITLE = "警察局數位化報案處理平台";
 export const CASE_STATUS_LABELS: Record<string, { label: string; color: string }> = {
