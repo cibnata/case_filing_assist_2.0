@@ -7,12 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { useParams, useLocation } from "wouter";
 import {
   ArrowLeft, QrCode, FileText, Cpu, Wallet, Copy, ExternalLink,
   Image, CheckCircle2, AlertCircle, Clock, User, Shield,
-  RefreshCw, FileSearch, ChevronRight, Download, Eye
+  RefreshCw, FileSearch, ChevronRight, Download, Eye, Upload
 } from "lucide-react";
 import { CASE_STATUS_LABELS } from "@/lib/constants";
 
@@ -24,7 +24,9 @@ export default function CaseDetail() {
   const [editingOcr, setEditingOcr] = useState(false);
   const [ocrText, setOcrText] = useState("");
   const [processingFileIds, setProcessingFileIds] = useState<Set<number>>(new Set());
+  const [uploadingEvidence, setUploadingEvidence] = useState(false);
   const [selectedOcrFile, setSelectedOcrFile] = useState<{ id: number; name: string; ocrText: string; storageUrl: string } | null>(null);
+  const evidenceInputRef = useRef<HTMLInputElement>(null);
 
   const utils = trpc.useUtils();
 
@@ -59,6 +61,7 @@ export default function CaseDetail() {
       setProcessingFileIds(prev => { const s = new Set(prev); s.delete(vars.fileId); return s; });
     },
   });
+  const uploadEvidenceMutation = trpc.upload.uploadEvidenceForCase.useMutation();
   const handleOcrSingleFile = (fileId: number) => {
     if (processingFileIds.has(fileId)) return;
     setProcessingFileIds(prev => new Set(prev).add(fileId));
@@ -130,6 +133,45 @@ export default function CaseDetail() {
     }
   };
 
+  const handleEvidenceUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files || []);
+    const valid = selected.filter(f => {
+      if (f.size > 10 * 1024 * 1024) { toast.error(`${f.name} 超過 10MB 限制`); return false; }
+      if (!f.type.startsWith("image/")) { toast.error(`${f.name} 不是圖片格式`); return false; }
+      return true;
+    });
+    if (valid.length === 0) {
+      e.target.value = "";
+      return;
+    }
+
+    setUploadingEvidence(true);
+    let uploaded = 0;
+    for (const file of valid) {
+      try {
+        const base64 = await fileToBase64(file);
+        await uploadEvidenceMutation.mutateAsync({
+          caseId,
+          fileName: file.name,
+          mimeType: file.type,
+          base64Data: base64,
+          fileSize: file.size,
+        });
+        uploaded++;
+      } catch (err: any) {
+        toast.error(`上傳 ${file.name} 失敗：${err?.message || "未知錯誤"}`);
+      }
+    }
+
+    setUploadingEvidence(false);
+    e.target.value = "";
+    if (uploaded > 0) {
+      toast.success(`已新增 ${uploaded} 張證物圖片`);
+      utils.upload.getEvidenceFiles.invalidate({ caseId });
+      utils.cases.getById.invalidate({ id: caseId });
+    }
+  };
+
   if (isLoading) {
     return (
       <PoliceLayout>
@@ -152,6 +194,7 @@ export default function CaseDetail() {
   const c = caseData as any;
   const statusInfo = CASE_STATUS_LABELS[c.status] || { label: c.status, color: "" };
   const walletAddresses = (intelReport as any)?.walletAddresses || [];
+  const canUploadEvidence = c.status !== "closed";
 
   return (
     <PoliceLayout>
@@ -341,9 +384,30 @@ export default function CaseDetail() {
                     <Image className="h-4 w-4 text-primary" />
                     證物圖片 ({evidenceFiles?.length || 0})
                   </CardTitle>
-                  {(evidenceFiles?.length || 0) > 0 && (
-                    <span className="text-xs text-muted-foreground">點擊圖片即可觸發 OCR 辨識</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {(evidenceFiles?.length || 0) > 0 && (
+                      <span className="hidden sm:inline text-xs text-muted-foreground">點擊圖片即可觸發 OCR 辨識</span>
+                    )}
+                    <input
+                      ref={evidenceInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleEvidenceUpload}
+                    />
+                    {canUploadEvidence && (
+                      <Button
+                        size="sm"
+                        onClick={() => evidenceInputRef.current?.click()}
+                        disabled={uploadingEvidence}
+                        className="text-xs gap-1 bg-primary hover:bg-primary/90"
+                      >
+                        <Upload className="h-3 w-3" />
+                        {uploadingEvidence ? "上傳中..." : "新增證物"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -351,6 +415,17 @@ export default function CaseDetail() {
                   <div className="text-center py-8 text-muted-foreground text-sm">
                     <Image className="h-8 w-8 mx-auto mb-2 opacity-30" />
                     尚無證物圖片
+                    {canUploadEvidence && (
+                      <Button
+                        size="sm"
+                        onClick={() => evidenceInputRef.current?.click()}
+                        disabled={uploadingEvidence}
+                        className="mt-4 text-xs gap-1 bg-primary hover:bg-primary/90"
+                      >
+                        <Upload className="h-3 w-3" />
+                        {uploadingEvidence ? "上傳中..." : "新增證物"}
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -496,14 +571,26 @@ export default function CaseDetail() {
                         </Button>
                       )}
                       {ocrResult.confirmedText && (
-                        <Button
-                          onClick={handleAnalyze}
-                          disabled={analyzeMutation.isPending}
-                          className="text-xs bg-primary hover:bg-primary/90 gap-1"
-                        >
-                          <Cpu className="h-3 w-3" />
-                          {analyzeMutation.isPending ? "分析中..." : "開始情資分析"}
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setOcrText(ocrResult.confirmedText || "");
+                              setEditingOcr(true);
+                            }}
+                            className="text-xs gap-1"
+                          >
+                            <CheckCircle2 className="h-3 w-3" />重新編輯全文
+                          </Button>
+                          <Button
+                            onClick={handleAnalyze}
+                            disabled={analyzeMutation.isPending}
+                            className="text-xs bg-primary hover:bg-primary/90 gap-1"
+                          >
+                            <Cpu className="h-3 w-3" />
+                            {analyzeMutation.isPending ? "分析中..." : "開始情資分析"}
+                          </Button>
+                        </div>
                       )}
                     </div>
                   )}
@@ -754,6 +841,18 @@ export default function CaseDetail() {
     </PoliceLayout>
   );
 }
+
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(",")[1] || result);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
 // ─── 情資報告子元件件 ───────────────────────────────────────────────────────────
 function IntelReportView({ report }: { report: any }) {
   return (
